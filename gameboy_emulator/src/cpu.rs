@@ -57,7 +57,7 @@ impl CPU {
 
     pub fn get_memory_16bit(&self, address: u16) -> u16{
         return self.get_memory_8bit(address) as u16
-            | (self.get_memory_8bit(address + 1) << 8) as u16; 
+            | (self.get_memory_8bit(address + 1) as u16) << 8; 
     }
 
     pub fn set_memory_16bit(&mut self, address: u16, value: u16) {
@@ -141,8 +141,8 @@ impl CPU {
 
     pub fn get_register_16bit(&self, register: Registers16bit) -> u16 {
         let index: usize = register as usize * 2;
-        return (self.registers[index] << 8
-              | self.registers[index + 1]) as u16;
+        return (self.registers[index] as u16) << 8
+              | self.registers[index + 1] as u16;
     }
 
     pub fn set_register_16bit(&mut self, register: Registers16bit, value: u16) {
@@ -151,20 +151,20 @@ impl CPU {
         self.registers[index + 1] = value as u8; 
     }
 
-    pub fn get_SP(&self) -> u16 {
+    pub fn get_sp(&self) -> u16 {
         return self.stack_pointer;
     }
 
-    pub fn set_SP(&mut self, value: u16) {
+    pub fn set_sp(&mut self, value: u16) {
         self.stack_pointer = value;
     }
 
-    pub fn get_PC(&self) -> u16 {
+    pub fn get_pc(&self) -> u16 {
         return self.program_counter;
     }
-    pub fn set_PC(&mut self, value: u16) {
+    pub fn set_pc(&mut self, value: u16) {
         self.program_counter = value;
     }
-    
+
 }
 

@@ -63,7 +63,7 @@ impl Operand16bit {
 
 pub fn ld(cpu: &mut CPU, operand1: Operand8bit, operand2: Operand8bit) {
     let value = operand2.get(cpu);
-    operand1.set(cpu, operand2.get(cpu));
+    operand1.set(cpu, value);
 }
 
 pub fn ld_16bit(cpu: &mut CPU, operand1: Operand16bit, operand2: Operand16bit) {
@@ -235,11 +235,11 @@ pub fn addhl(cpu: &mut CPU, operand1: Operand16bit) {
 }
 
 pub fn addsp(cpu: &mut CPU, operand1: Operand16bit) {
-    let value1 = cpu.stack_pointer as u32;
+    let value1 = cpu.get_sp() as u32;
     let value2 = operand1.get(cpu) as u32;
 
     let sum = value1 + value2;
-    cpu.set_SP(sum as u16);
+    cpu.set_sp(sum as u16);
 
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, (value1 & 0x0FFF) + (value2 & 0x0FFF) >= 0x1000);
