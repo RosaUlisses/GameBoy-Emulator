@@ -39,6 +39,32 @@ impl CPU {
        self.registers[Registers::F as usize] = self.registers[Registers::F as usize] | !(1 << flag as u8); 
     }
 
+    pub fn get_register(&self, register : Registers) -> u8 {
+        match(register){
+            Registers::A => return self.registers[Registers::A as usize],
+            Registers::F => return self.registers[Registers::F as usize],
+            Registers::B => return self.registers[Registers::B as usize],
+            Registers::C => return self.registers[Registers::C as usize],
+            Registers::D => return self.registers[Registers::D as usize],
+            Registers::E => return self.registers[Registers::E as usize],
+            Registers::H => return self.registers[Registers::H as usize],
+            Registers::L => return self.registers[Registers::L as usize],
+        } 
+    }
+
+    pub fn set_register(&mut self, register : Registers, value : u8) {
+        match(register){
+            Registers::A => self.registers[Registers::A as usize] = value,
+            Registers::F => self.registers[Registers::F as usize] = value,
+            Registers::B => self.registers[Registers::B as usize] = value,
+            Registers::C => self.registers[Registers::C as usize] = value,
+            Registers::D => self.registers[Registers::D as usize] = value,
+            Registers::E => self.registers[Registers::E as usize] = value,
+            Registers::H => self.registers[Registers::H as usize] = value,
+            Registers::L => self.registers[Registers::L as usize] = value,
+        } 
+    }
+
     pub fn get_AF_value(&self) -> u16 {
         return ((self.registers[Registers::A as usize] << 7) | self.registers[Registers::F as usize]) as u16;
     }
