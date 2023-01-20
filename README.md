@@ -1,2 +1,2 @@
 # GameBoy-Emulator
-A gameboy emulatro written in Rust
+A gameboy emulator written in Rust
