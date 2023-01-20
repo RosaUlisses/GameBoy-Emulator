@@ -1,11 +1,10 @@
-mod control_process_unity;
-use control_process_unity::CPU;
-use control_process_unity::flags;
+mod control_proccess_unity;
+use control_proccess_unity::CPU;
+use control_proccess_unity::Flags;
+use control_proccess_unity::Registers;
+
+
 
 fn main() {
-
-    let mut c = CPU::new();
-    c.set_flag(flags::C);
-    print!("oi");
 }
 
