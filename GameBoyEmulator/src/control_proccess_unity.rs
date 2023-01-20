@@ -58,6 +58,14 @@ impl CPU {
         self.memory[address as usize] = value as u8;
         self.memory[(address + 1) as usize] = (value << 8) as u8;
     }
+    
+    pub fn set_memory_addressed_by_sp(&mut self, value : u8) {
+        self.memory[self.stack_pointer as usize] = value;
+    }
+
+    pub fn get_memory_addressed_by_sp(&mut self) -> u8 {
+        return self.memory[self.stack_pointer as usize];
+    }
 
     pub fn get_flag(&self, flag : Flags) -> bool {
         self.get_register(Registers8bit::F) >> (flag as u8) & 1 == 1

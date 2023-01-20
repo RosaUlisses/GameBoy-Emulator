@@ -50,7 +50,30 @@ impl Operand16bit {
 }
 
 pub fn ld(cpu : &mut CPU, operand1 : Operand8bit, operand2 : Operand8bit) {
+    let value = operand2.get(cpu);
     operand1.set(cpu, operand2.get(cpu));
+}
+
+pub fn ld_16bit(cpu : &mut CPU, operand1 : Operand16bit, operand2 : Operand16bit){
+    let value = operand2.get(cpu);
+    operand1.set(cpu, value);
+}
+
+pub fn push(cpu : &mut CPU, operand1 : Operand16bit) {
+    let value = operand1.get(cpu);
+    cpu.set_memory_addressed_by_sp((value << 8) as u8);
+    cpu.stack_pointer -= 1;
+    cpu.set_memory_addressed_by_sp(value as u8);
+    cpu.stack_pointer -= 1;
+}
+
+pub fn pop(cpu : &mut CPU, operand1 : Operand16bit) {
+    let value1 = cpu.get_memory_addressed_by_sp() as u16;
+    cpu.stack_pointer += 1;
+    let value2 = cpu.get_memory_addressed_by_sp() as u16;
+    cpu.stack_pointer += 1;
+
+    operand1.set(cpu, value1 | (value2 >> 8))
 }
 
 pub fn add(cpu : &mut CPU, operand1 : Operand8bit) {
