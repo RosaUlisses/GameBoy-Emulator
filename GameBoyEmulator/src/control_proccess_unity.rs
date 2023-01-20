@@ -23,7 +23,7 @@ pub struct CPU {
     pub registers : [u8; REGISTER_COUNT],
     pub stack_pointer : u16,
     pub program_counter : u16,
-    pub memory : [u16; MEMORY_SIZE]
+    pub memory : [u8; MEMORY_SIZE]
 }
 
 impl CPU {
@@ -31,54 +31,49 @@ impl CPU {
         return CPU {registers : [0; 8], stack_pointer : 0, program_counter : 0, memory : [0; MEMORY_SIZE]};
     }
 
-    pub fn set_flag(&mut self, flag : Flags) {
-       self.registers[Registers::F as usize] = self.registers[Registers::F as usize] | (1 << flag as u8); 
+    pub fn get_memory_adress(&self, address : u16) -> u8{
+        return self.memory[address as usize]; 
     }
 
-    pub fn reset_flag(&mut self, flag : Flags) {
-       self.registers[Registers::F as usize] = self.registers[Registers::F as usize] | !(1 << flag as u8); 
+    pub fn set_memory_adress(&mut self, address : u16, value : u8) {
+        self.memory[address as usize] = value;
+    }
+
+    pub fn get_flag(&self, flag : Flags) -> bool {
+        self.get_register(Registers::F) >> (flag as u8) & 1 == 1
+    }
+
+    pub fn set_flag(&mut self, flag : Flags, value : bool) {
+        if value {
+            self.set_register(Registers::F, self.get_register(Registers::F) | (1 << flag as u8)); 
+        }
+        else {
+            self.set_register(Registers::F, self.get_register(Registers::F) & !(1 << flag as u8)); 
+        }
     }
 
     pub fn get_register(&self, register : Registers) -> u8 {
-        match(register){
-            Registers::A => return self.registers[Registers::A as usize],
-            Registers::F => return self.registers[Registers::F as usize],
-            Registers::B => return self.registers[Registers::B as usize],
-            Registers::C => return self.registers[Registers::C as usize],
-            Registers::D => return self.registers[Registers::D as usize],
-            Registers::E => return self.registers[Registers::E as usize],
-            Registers::H => return self.registers[Registers::H as usize],
-            Registers::L => return self.registers[Registers::L as usize],
-        } 
+        return self.registers[register as usize]; 
     }
 
     pub fn set_register(&mut self, register : Registers, value : u8) {
-        match(register){
-            Registers::A => self.registers[Registers::A as usize] = value,
-            Registers::F => self.registers[Registers::F as usize] = value,
-            Registers::B => self.registers[Registers::B as usize] = value,
-            Registers::C => self.registers[Registers::C as usize] = value,
-            Registers::D => self.registers[Registers::D as usize] = value,
-            Registers::E => self.registers[Registers::E as usize] = value,
-            Registers::H => self.registers[Registers::H as usize] = value,
-            Registers::L => self.registers[Registers::L as usize] = value,
-        } 
+        self.registers[register as usize] = value;
     }
 
     pub fn get_AF_value(&self) -> u16 {
-        return ((self.registers[Registers::A as usize] << 7) | self.registers[Registers::F as usize]) as u16;
+        return ((self.get_register(Registers::A) << 7) | self.get_register(Registers::F)) as u16;
     }
 
     pub fn get_BC_value(&self) -> u16 {
-        return ((self.registers[Registers::B as usize] << 7) | self.registers[Registers::C as usize]) as u16;
+        return ((self.get_register(Registers::B) << 7) | self.get_register(Registers::C)) as u16;
     }
 
     pub fn get_DE_value(&self) -> u16 {
-        return ((self.registers[Registers::B as usize] << 7) | self.registers[Registers::C as usize]) as u16;
+        return ((self.get_register(Registers::B) << 7) | self.get_register(Registers::C)) as u16;
     }
 
     pub fn get_HL_value(&self) -> u16 {
-        return ((self.registers[Registers::H as usize] << 7) | self.registers[Registers::L as usize]) as u16;
+        return ((self.get_register(Registers::H) << 7) | self.get_register(Registers::L)) as u16;
     }
 
 
