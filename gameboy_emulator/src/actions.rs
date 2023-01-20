@@ -79,7 +79,7 @@ pub fn ld_16bit(cpu: &mut CPU, operand1: Operand16bit, operand2: Operand16bit) {
 */
 pub fn push(cpu: &mut CPU, operand1: Operand16bit) {
     let value = operand1.get(cpu);
-    cpu.stack_pointer -= 2;
+    cpu.stack_pointer = cpu.stack_pointer.wrapping_sub(2);
     cpu.set_16bit_memory_from_sp(value);
     // cpu.set_memory_addressed_by_sp((value << 8) as u8);
     // cpu.stack_pointer -= 1;
@@ -89,7 +89,7 @@ pub fn push(cpu: &mut CPU, operand1: Operand16bit) {
 
 pub fn pop(cpu: &mut CPU, operand1: Operand16bit) {
     let value = cpu.get_16bit_memory_from_sp();
-    cpu.stack_pointer += 2;
+    cpu.stack_pointer = cpu.stack_pointer.wrapping_add(2);
     // let value1 = cpu.get_memory_addressed_by_sp() as u16;
     // cpu.stack_pointer += 1;
     // let value2 = cpu.get_memory_addressed_by_sp() as u16;
@@ -102,7 +102,7 @@ pub fn add(cpu: &mut CPU, operand1: Operand8bit) {
     let value1: u16 = cpu.get_register_8bit(Registers8bit::A) as u16;
     let value2: u16 = operand1.get(cpu) as u16;
 
-    let sum: u16 = value1 + value2;
+    let sum: u16 = value1.wrapping_add(value2);
     cpu.set_register_8bit(Registers8bit::A, sum as u8);
     
     cpu.set_flag(Flags::Z, sum == 0);
@@ -115,10 +115,8 @@ pub fn adc(cpu: &mut CPU, operand1: Operand8bit) {
     let value1: u16 = cpu.get_register_8bit(Registers8bit::A) as u16;
     let value2: u16 = operand1.get(cpu) as u16;
 
-    let sum: u16;
     let carry: u16 = cpu.get_flag(Flags::C) as u16; // 1 or 0
-
-    sum = value1 + value2 + carry;
+    let sum = value1.wrapping_add(value2).wrapping_add(carry);
     cpu.set_register_8bit(Registers8bit::A, sum as u8);
     
     cpu.set_flag(Flags::Z, sum == 0);
@@ -130,8 +128,8 @@ pub fn adc(cpu: &mut CPU, operand1: Operand8bit) {
 pub fn sub(cpu: &mut CPU, operand1: Operand8bit) {
     let value1: u16 = cpu.get_register_8bit(Registers8bit::A) as u16;
     let value2: u16 = operand1.get(cpu) as u16;
-    let difference: u16 = value1 - value2;
 
+    let difference: u16 = value1.wrapping_sub(value2);
     cpu.set_register_8bit(Registers8bit::A, difference as u8);
 
     cpu.set_flag(Flags::Z, difference == 0);
@@ -144,10 +142,8 @@ pub fn sbc(cpu: &mut CPU, operand1: Operand8bit) {
     let value1: u16 = cpu.get_register_8bit(Registers8bit::A) as u16;
     let value2: u16 = operand1.get(cpu) as u16;
 
-    let difference: u16;
     let carry: u16 = cpu.get_flag(Flags::C) as u16; // 1 or 0
-
-    difference = value1 - value2 + carry;
+    let difference = value1.wrapping_sub(value2).wrapping_add(carry);
     cpu.set_register_8bit(Registers8bit::A, difference as u8);
 
     cpu.set_flag(Flags::Z, difference == 0);
@@ -203,7 +199,7 @@ pub fn cp(cpu: &mut CPU, operand1: Operand8bit) {
 }
 
 pub fn inc(cpu: &mut CPU, operand1: Operand8bit) {
-   let incremented: u8 = operand1.get(cpu) + 1;
+   let incremented: u8 = operand1.get(cpu).wrapping_add(1);
 
    operand1.set(cpu, incremented);
 
@@ -213,7 +209,7 @@ pub fn inc(cpu: &mut CPU, operand1: Operand8bit) {
 }
 
 pub fn dec(cpu: &mut CPU, operand1: Operand8bit) {
-   let decremented: u8 = operand1.get(cpu) - 1;
+   let decremented: u8 = operand1.get(cpu).wrapping_sub(1);
 
    operand1.set(cpu,decremented);
 
@@ -247,12 +243,12 @@ pub fn addsp(cpu: &mut CPU, operand1: Operand16bit) {
 }
 
 pub fn inc16bit(cpu: &mut CPU, operand1: Operand16bit){
-    let value = operand1.get(cpu) + 1;
+    let value = operand1.get(cpu).wrapping_add(1);
     operand1.set(cpu, value)
 }
 
 pub fn dec16bit(cpu: &mut CPU, operand1: Operand16bit){
-    let value = operand1.get(cpu) - 1;
+    let value = operand1.get(cpu).wrapping_sub(1);
     operand1.set(cpu, value)
 }
 

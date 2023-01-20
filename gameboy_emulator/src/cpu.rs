@@ -57,12 +57,12 @@ impl CPU {
 
     pub fn get_memory_16bit(&self, address: u16) -> u16{
         return self.get_memory_8bit(address) as u16
-            | (self.get_memory_8bit(address + 1) as u16) << 8; 
+            | (self.get_memory_8bit(address.wrapping_add(1)) as u16) << 8; 
     }
 
     pub fn set_memory_16bit(&mut self, address: u16, value: u16) {
         self.set_memory_8bit(address, value as u8);
-        self.set_memory_8bit(address + 1, (value >> 8) as u8);
+        self.set_memory_8bit(address.wrapping_add(1), (value >> 8) as u8);
     }
     
     pub fn get_8bit_memory_from_sp(&mut self) -> u8 {
