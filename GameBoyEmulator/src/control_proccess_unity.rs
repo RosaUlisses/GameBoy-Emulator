@@ -8,7 +8,7 @@ pub enum Flags {
     C = 4
 }
 
-pub enum Registers {
+pub enum Registers8bit {
     A = 0, 
     F = 1,
     B = 2,
@@ -17,6 +17,15 @@ pub enum Registers {
     E = 5,
     H = 6,
     L = 7
+}
+
+pub enum Registers16bit {
+    AF, 
+    BC,
+    DE,
+    HL,
+    SP,
+    PC
 }
 
 pub struct CPU {
@@ -31,51 +40,109 @@ impl CPU {
         return CPU {registers : [0; 8], stack_pointer : 0, program_counter : 0, memory : [0; MEMORY_SIZE]};
     }
 
-    pub fn get_memory_adress(&self, address : u16) -> u8{
+    pub fn get_memory_adress_8bit(&self, address : u16) -> u8{
         return self.memory[address as usize]; 
     }
 
-    pub fn set_memory_adress(&mut self, address : u16, value : u8) {
+    pub fn set_memory_adress_8bit(&mut self, address : u16, value : u8) {
         self.memory[address as usize] = value;
     }
 
+    pub fn get_memory_adress_16bit(&self, address : u16) -> u16{
+        return (self.memory[address as usize] as u16) | ((self.memory[address as usize] << 8) as u16); 
+    }
+
+    pub fn set_memory_adress_16bit(&mut self, address : u16, value : u16) {
+        self.memory[address as usize] = value as u8;
+        self.memory[(address + 1) as usize] = (value << 8) as u8;
+    }
+
     pub fn get_flag(&self, flag : Flags) -> bool {
-        self.get_register(Registers::F) >> (flag as u8) & 1 == 1
+        self.get_register(Registers8bit::F) >> (flag as u8) & 1 == 1
     }
 
     pub fn set_flag(&mut self, flag : Flags, value : bool) {
         if value {
-            self.set_register(Registers::F, self.get_register(Registers::F) | (1 << flag as u8)); 
+            self.set_register(Registers8bit::F, self.get_register(Registers8bit::F) | (1 << flag as u8)); 
         }
         else {
-            self.set_register(Registers::F, self.get_register(Registers::F) & !(1 << flag as u8)); 
+            self.set_register(Registers8bit::F, self.get_register(Registers8bit::F) & !(1 << flag as u8)); 
         }
     }
 
-    pub fn get_register(&self, register : Registers) -> u8 {
+    pub fn get_register(&self, register : Registers8bit) -> u8 {
         return self.registers[register as usize]; 
     }
 
-    pub fn set_register(&mut self, register : Registers, value : u8) {
+    pub fn set_register(&mut self, register : Registers8bit, value : u8) {
         self.registers[register as usize] = value;
     }
 
-    pub fn get_AF_value(&self) -> u16 {
-        return ((self.get_register(Registers::A) << 7) | self.get_register(Registers::F)) as u16;
+    pub fn get_AF(&self) -> u16 {
+        return ((self.get_register(Registers8bit::A) << 8) | self.get_register(Registers8bit::F)) as u16;
     }
 
-    pub fn get_BC_value(&self) -> u16 {
-        return ((self.get_register(Registers::B) << 7) | self.get_register(Registers::C)) as u16;
+    pub fn get_BC(&self) -> u16 {
+        return ((self.get_register(Registers8bit::B) << 8) | self.get_register(Registers8bit::C)) as u16;
     }
 
-    pub fn get_DE_value(&self) -> u16 {
-        return ((self.get_register(Registers::B) << 7) | self.get_register(Registers::C)) as u16;
+    pub fn get_DE(&self) -> u16 {
+        return ((self.get_register(Registers8bit::B) << 8) | self.get_register(Registers8bit::C)) as u16;
     }
 
-    pub fn get_HL_value(&self) -> u16 {
-        return ((self.get_register(Registers::H) << 7) | self.get_register(Registers::L)) as u16;
+    pub fn get_HL(&self) -> u16 {
+        return ((self.get_register(Registers8bit::H) << 8) | self.get_register(Registers8bit::L)) as u16;
     }
 
+    pub fn get_16bit_register(&self, register : Registers16bit) -> u16{
+        match register {
+            Registers16bit::AF =>  return self.get_AF(),
+            Registers16bit::BC => return self.get_BC(),
+            Registers16bit::DE => return self.get_DE(),
+            Registers16bit::HL => return self.get_HL(),
+            Registers16bit::SP => return self.stack_pointer,
+            Registers16bit::PC => return self.program_counter
+        }
+    }
+
+    pub fn set_AF(&mut self, value : u16){
+        self.set_register(Registers8bit::A, (value >> 8) as u8);
+        self.set_register(Registers8bit::F, value as u8);
+    }
+
+    pub fn set_BC(&mut self, value : u16){
+        self.set_register(Registers8bit::B, (value >> 8) as u8);
+        self.set_register(Registers8bit::C, value as u8);
+    }
+
+    pub fn set_DE(&mut self, value : u16){
+        self.set_register(Registers8bit::D, (value >> 8) as u8);
+        self.set_register(Registers8bit::E, value as u8);
+    }
+
+    pub fn set_HL(&mut self, value : u16){
+        self.set_register(Registers8bit::H, (value >> 8) as u8);
+        self.set_register(Registers8bit::L, value as u8);
+    }
+
+    pub fn set_SP(&mut self, value : u16){
+        self.stack_pointer = value;
+    }
+
+    pub fn set_PC(&mut self, value : u16){
+        self.program_counter = value;
+    }
+
+    pub fn set_16bit_register(&mut self, register : Registers16bit, value : u16) {
+        match register {
+            Registers16bit::AF => self.set_AF(value),
+            Registers16bit::BC => self.set_BC(value),
+            Registers16bit::DE => self.set_DE(value),
+            Registers16bit::HL => self.set_HL(value),
+            Registers16bit::SP => self.set_SP(value),
+            Registers16bit::PC => self.set_PC(value,)  
+        }
+    }
 
 }
 
