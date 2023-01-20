@@ -1,1 +1,0 @@
-C:\Programação\GameBoy-Emulator\GameBoyEmulator\target\debug\GameBoyEmulator.exe: C:\Programação\GameBoy-Emulator\GameBoyEmulator\src\control_process_unity.rs C:\Programação\GameBoy-Emulator\GameBoyEmulator\src\main.rs
