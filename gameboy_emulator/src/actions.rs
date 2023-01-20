@@ -1,7 +1,7 @@
-use crate::control_proccess_unity::CPU;
-use crate::control_proccess_unity::Flags;
-use crate::control_proccess_unity::Registers16bit;
-use crate::control_proccess_unity::Registers8bit;
+use crate::cpu::CPU;
+use crate::cpu::Flags;
+use crate::cpu::Registers16bit;
+use crate::cpu::Registers8bit;
 
 pub enum Operand8bit {
     Register(Registers8bit),
