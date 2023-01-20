@@ -8,6 +8,7 @@ pub enum Flags {
     C = 4
 }
 
+#[derive(Clone, Copy)]
 pub enum Registers8bit {
     A = 0, 
     F = 1,
@@ -19,6 +20,7 @@ pub enum Registers8bit {
     L = 7
 }
 
+#[derive(Clone, Copy)]
 pub enum Registers16bit {
     AF, 
     BC,

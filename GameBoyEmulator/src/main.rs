@@ -7,7 +7,6 @@ use control_proccess_unity::Flags;
 
 
 fn main() {
-    let mut cpu = &mut CPU::new();
 
 }
 

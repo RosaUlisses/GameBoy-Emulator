@@ -10,41 +10,41 @@ pub enum Operand8bit {
 }
 
 impl Operand8bit {
-    pub fn get(self, cpu : &CPU) -> u8 {
+    pub fn get(&self, cpu : &CPU) -> u8 {
         match self {
-            Operand8bit::Register(register) => return cpu.get_register(register),
-            Operand8bit::Immediate(immediate) => return immediate,
-            Operand8bit::Address(address) => return cpu.get_memory_adress_8bit(address),
+            Operand8bit::Register(register) => return cpu.get_register(*register),
+            Operand8bit::Immediate(immediate) => return *immediate,
+            Operand8bit::Address(address) => return cpu.get_memory_adress_8bit(*address),
         }
     }
-    pub fn set(self, cpu : &mut CPU, value : u8) {
+    pub fn set(&self, cpu : &mut CPU, value : u8) {
         match self {
-            Operand8bit::Register(register) => cpu.set_register(register, value),
+            Operand8bit::Register(register) => cpu.set_register(*register, value),
             Operand8bit::Immediate(_) => (),
-            Operand8bit::Address(address) => cpu.set_memory_adress_8bit(address, value),
+            Operand8bit::Address(address) => cpu.set_memory_adress_8bit(*address, value),
         }
     }
 }
 
-enum Operand16bit {
+pub enum Operand16bit {
     Register(Registers16bit),
     Immediate(u16),
     Address(u16),
 }
 
 impl Operand16bit {
-    pub fn get(self, cpu : &mut CPU) -> u16 {
+    pub fn get(&self, cpu : &mut CPU) -> u16 {
         match self {
-            Operand16bit::Register(register) => cpu.get_16bit_register(register),
-            Operand16bit::Immediate(immediate) => immediate,
-            Operand16bit::Address(address) => cpu.get_memory_adress_16bit(address),
+            Operand16bit::Register(register) => cpu.get_16bit_register(*register),
+            Operand16bit::Immediate(immediate) => *immediate,
+            Operand16bit::Address(address) => cpu.get_memory_adress_16bit(*address),
         }
     }
-    pub fn set(self, cpu : &mut CPU, value : u16) {
+    pub fn set(&self, cpu : &mut CPU, value : u16) {
         match self {
-            Operand16bit::Register(register) => cpu.set_16bit_register(register, value),
+            Operand16bit::Register(register) => cpu.set_16bit_register(*register, value),
             Operand16bit::Immediate(_) => (),
-            Operand16bit::Address(address) => cpu.set_memory_adress_16bit(address, value),
+            Operand16bit::Address(address) => cpu.set_memory_adress_16bit(*address, value),
         }
     }
 }
@@ -223,12 +223,4 @@ pub fn dec16bit(cpu : &mut CPU, operand1 : Operand16bit){
     let value = operand1.get(cpu);
 }
 
- //////////
-////////////
-////    ///////
-////    ////////
-////////////////
-///////////////
-////    ////
-////    ////     mong us
 
