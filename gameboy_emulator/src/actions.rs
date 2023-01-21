@@ -3,6 +3,7 @@ use crate::cpu::Flags;
 use crate::cpu::Registers16bit;
 use crate::cpu::Registers8bit;
 
+#[derive(Clone, Copy)]
 pub enum Operand8bit {
     Register(Registers8bit),
     Immediate(u8),
@@ -175,7 +176,7 @@ pub fn sbc(cpu: &mut CPU, operand1: Operand8bit) {
     cpu.set_flag(Flags::C, value1 < value2);
 }
 
-pub fn and(cpu: &mut CPU, operand1: Operand8bit){
+pub fn and(cpu: &mut CPU, operand1: Operand8bit) {
     let result = cpu.get_register_8bit(Registers8bit::A) & operand1.get(cpu);
 
     cpu.set_register_8bit(Registers8bit::A, result);
@@ -187,7 +188,7 @@ pub fn and(cpu: &mut CPU, operand1: Operand8bit){
 
 }
 
-pub fn or(cpu: &mut CPU, operand1: Operand8bit){
+pub fn or(cpu: &mut CPU, operand1: Operand8bit) {
     let result = cpu.get_register_8bit(Registers8bit::A) | operand1.get(cpu);
 
     cpu.set_register_8bit(Registers8bit::A, result);
@@ -199,7 +200,7 @@ pub fn or(cpu: &mut CPU, operand1: Operand8bit){
 
 }
 
-pub fn xor(cpu: &mut CPU, operand1: Operand8bit){
+pub fn xor(cpu: &mut CPU, operand1: Operand8bit) {
     let result = cpu.get_register_8bit(Registers8bit::A) ^ operand1.get(cpu);
 
     cpu.set_register_8bit(Registers8bit::A, result);
@@ -265,12 +266,12 @@ pub fn addsp(cpu: &mut CPU, operand1: Operand16bit) {
     cpu.set_flag(Flags::C, sum >= 0x10000);
 }
 
-pub fn inc16bit(cpu: &mut CPU, operand1: Operand16bit){
+pub fn inc16bit(cpu: &mut CPU, operand1: Operand16bit) {
     let value = operand1.get(cpu).wrapping_add(1);
     operand1.set(cpu, value)
 }
 
-pub fn dec16bit(cpu: &mut CPU, operand1: Operand16bit){
+pub fn dec16bit(cpu: &mut CPU, operand1: Operand16bit) {
     let value = operand1.get(cpu).wrapping_sub(1);
     operand1.set(cpu, value)
 }
