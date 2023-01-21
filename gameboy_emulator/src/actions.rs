@@ -20,6 +20,22 @@ impl Operand8bit {
                 => return cpu.get_memory_8bit(*address),
         }
     }
+
+    pub fn get_bit(&self, cpu: &CPU, bit: u8) -> u8{
+        let value = self.get(cpu);
+        return (value << bit) & 1;
+    }
+
+    pub fn set_bit(&self, cpu: &mut CPU, bit: u8) {
+        let value = self.get(cpu);
+        self.set(cpu, value | (1 >> bit));
+    }
+
+    pub fn reset_bit(&self, cpu: &mut CPU, bit: u8) {
+        let value = self.get(cpu);
+        self.set(cpu, value | !(1 >> bit));
+    }
+
     pub fn set(&self, cpu: &mut CPU, value: u8) {
         match self {
             Operand8bit::Register(register)
@@ -61,9 +77,23 @@ impl Operand16bit {
     }
 }
 
+
+
 pub fn ld(cpu: &mut CPU, operand1: Operand8bit, operand2: Operand8bit) {
     let value = operand2.get(cpu);
     operand1.set(cpu, value);
+}
+
+pub fn ldd_ahl(cpu: &mut CPU) {
+    let value = cpu.get_8bit_memory_from_register(Registers16bit::HL);  
+    cpu.set_register_8bit(Registers8bit::A, value);
+    dec16bit(cpu, Operand16bit::Register(Registers16bit::HL));
+}
+
+pub fn ldd_hla(cpu : &mut CPU) {
+    let value = cpu.get_register_8bit(Registers8bit::A);
+    cpu.set_8bit_memory_from_register(value, Registers16bit::HL);
+    dec16bit(cpu, Operand16bit::Register(Registers16bit::HL));
 }
 
 pub fn ld_16bit(cpu: &mut CPU, operand1: Operand16bit, operand2: Operand16bit) {
@@ -80,20 +110,13 @@ pub fn ld_16bit(cpu: &mut CPU, operand1: Operand16bit, operand2: Operand16bit) {
 pub fn push(cpu: &mut CPU, operand1: Operand16bit) {
     let value = operand1.get(cpu);
     cpu.stack_pointer = cpu.stack_pointer.wrapping_sub(2);
+
     cpu.set_16bit_memory_from_sp(value);
-    // cpu.set_memory_addressed_by_sp((value << 8) as u8);
-    // cpu.stack_pointer -= 1;
-    // cpu.set_memory_addressed_by_sp(value as u8);
-    // cpu.stack_pointer -= 1;
 }
 
 pub fn pop(cpu: &mut CPU, operand1: Operand16bit) {
     let value = cpu.get_16bit_memory_from_sp();
     cpu.stack_pointer = cpu.stack_pointer.wrapping_add(2);
-    // let value1 = cpu.get_memory_addressed_by_sp() as u16;
-    // cpu.stack_pointer += 1;
-    // let value2 = cpu.get_memory_addressed_by_sp() as u16;
-    // cpu.stack_pointer += 1;
 
     operand1.set(cpu, value);
 }
@@ -252,4 +275,168 @@ pub fn dec16bit(cpu: &mut CPU, operand1: Operand16bit){
     operand1.set(cpu, value)
 }
 
+pub fn swap(cpu: &mut CPU, operand1: Operand8bit) {
+    let value = (operand1.get(cpu) << 4) | (operand1.get(cpu) >> 4);
+    operand1.set(cpu, value);
 
+    cpu.set_flag(Flags::Z, value == 0);
+
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, false);
+}
+
+pub fn daa(cpu: &mut CPU, operand1: Operand8bit) {
+
+    let mut a_value = cpu.get_register_8bit(Registers8bit::A);
+
+    if !cpu.get_flag(Flags::N) {
+       
+        if cpu.get_flag(Flags::C) || (a_value > 0x99) {
+            a_value = a_value.wrapping_add(0x60);
+            cpu.set_flag(Flags::C, true);
+        }
+        if cpu.get_flag(Flags::H) || ((a_value & 0x0f) > 0x09) {
+            a_value = a_value.wrapping_add(0x06);
+        } 
+    }
+    else {
+        if cpu.get_flag(Flags::C) {
+            a_value = a_value.wrapping_sub(0x60);
+        }
+        if cpu.get_flag(Flags::H) {
+            a_value = a_value.wrapping_sub(0x06);
+        }
+    }
+
+    cpu.set_flag(Flags::Z, a_value == 0);
+    cpu.set_flag(Flags::H, false);
+}
+
+pub fn cpl(cpu: &mut CPU) {
+    let value = cpu.get_register_8bit(Registers8bit::A);
+    cpu.set_register_8bit(Registers8bit::A, !value);
+
+    cpu.set_flag(Flags::N, true);
+    cpu.set_flag(Flags::H, true);
+}
+
+pub fn ccf(cpu: &mut CPU) {
+    cpu.set_flag(Flags::C, !cpu.get_flag(Flags::C));
+
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+}
+
+pub fn scf(cpu: &mut CPU) {
+    cpu.set_flag(Flags::C, true);
+
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+}
+
+pub fn nop() {
+    return;
+}
+
+pub fn rlc(cpu: &mut CPU, operand1: Operand8bit) {
+    let a_value = operand1.get(cpu); 
+    let shifted_value = a_value << 1;
+    
+    operand1.set(cpu, shifted_value);
+
+    cpu.set_flag(Flags::Z, shifted_value == 0);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, (a_value & 1) == 1);
+}
+
+pub fn rl(cpu: &mut CPU, operand1: Operand8bit) {
+    let a_value = operand1.get(cpu);
+
+    // isso da certo ?
+    let c_flag = cpu.get_flag(Flags::C) as u8; 
+    let shifted_value = (a_value << 1) | (c_flag >> 7);
+
+    operand1.set(cpu, shifted_value);
+
+    cpu.set_flag(Flags::Z, shifted_value == 0);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, (a_value & 1) == 1);
+}
+
+pub fn rrc(cpu: &mut CPU, operand1: Operand8bit) {
+    let a_value = operand1.get(cpu); 
+    let shifted_value = a_value >> 1;
+    operand1.set(cpu, shifted_value);
+
+    cpu.set_flag(Flags::Z, shifted_value == 0);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, (a_value & 0x80) == 1);
+}
+
+pub fn rr(cpu: &mut CPU, operand1: Operand8bit) {
+    let a_value = operand1.get(cpu);
+    // isso da certo ?
+    let c_flag = cpu.get_flag(Flags::C) as u8; 
+    let shifted_value = (a_value >> 1) | c_flag;
+
+    operand1.set(cpu, shifted_value);
+
+    cpu.set_flag(Flags::Z, shifted_value == 0);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, (a_value & 0x80) == 1);
+}
+
+pub fn sla(cpu: &mut CPU, operand1: Operand8bit) {
+    let a_value = operand1.get(cpu); 
+    let shifted_value = (a_value << 1) & !(1);
+    
+    operand1.set(cpu, shifted_value);
+
+    cpu.set_flag(Flags::Z, shifted_value == 0);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, (a_value & 1) == 1);   
+}
+
+pub fn sra(cpu: &mut CPU, operand1: Operand8bit) {
+    let a_value = operand1.get(cpu); 
+    let shifted_value = (a_value >> 1) & !(0x80);
+    operand1.set(cpu, shifted_value);
+
+    cpu.set_flag(Flags::Z, shifted_value == 0);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, (a_value & 0x80) == 1);
+}
+
+pub fn srl(cpu: &mut CPU, operand1: Operand8bit) {
+    let a_value = operand1.get(cpu); 
+    let shifted_value = a_value >> 1;
+    operand1.set(cpu, shifted_value);
+
+    cpu.set_flag(Flags::Z, shifted_value == 0);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, (a_value & 0x80) == 1);
+}
+
+pub fn bit(cpu: &mut CPU, operand1: Operand8bit, bit: u8){
+    let bit = operand1.get_bit(cpu, bit);
+
+    cpu.set_flag(Flags::Z, bit == 0);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, true);
+}
+
+pub fn set(cpu: &mut CPU, operand1: Operand8bit, bit: u8) {
+    operand1.set_bit(cpu, bit);
+}
+
+pub fn res(cpu: &mut CPU, operand1: Operand8bit, bit: u8) {
+    operand1.reset_bit(cpu, bit);
+}
