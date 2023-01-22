@@ -3,6 +3,8 @@ use crate::cpu::Flags;
 use crate::cpu::Registers16bit;
 use crate::cpu::Registers8bit;
 
+use crate::bitwise;
+
 #[derive(Clone, Copy)]
 pub enum Operand8bit {
     Register(Registers8bit),
@@ -20,21 +22,6 @@ impl Operand8bit {
             Operand8bit::Address(address)
                 => return cpu.get_memory_8bit(*address),
         }
-    }
-
-    pub fn get_bit(&self, cpu: &CPU, bit: u8) -> u8{
-        let value = self.get(cpu);
-        return (value << bit) & 1;
-    }
-
-    pub fn set_bit(&self, cpu: &mut CPU, bit: u8) {
-        let value = self.get(cpu);
-        self.set(cpu, value | (1 >> bit));
-    }
-
-    pub fn reset_bit(&self, cpu: &mut CPU, bit: u8) {
-        let value = self.get(cpu);
-        self.set(cpu, value | !(1 >> bit));
     }
 
     pub fn set(&self, cpu: &mut CPU, value: u8) {
@@ -287,7 +274,7 @@ pub fn swap(cpu: &mut CPU, operand1: Operand8bit) {
     cpu.set_flag(Flags::C, false);
 }
 
-pub fn daa(cpu: &mut CPU, operand1: Operand8bit) {
+pub fn daa(cpu: &mut CPU) {
 
     let mut a_value = cpu.get_register_8bit(Registers8bit::A);
 
@@ -427,17 +414,19 @@ pub fn srl(cpu: &mut CPU, operand1: Operand8bit) {
 }
 
 pub fn bit(cpu: &mut CPU, operand1: Operand8bit, bit: u8){
-    let bit = operand1.get_bit(cpu, bit);
+    let bit = bitwise::get_bit_8b(operand1.get(cpu), bit);
 
-    cpu.set_flag(Flags::Z, bit == 0);
+    cpu.set_flag(Flags::Z, bit);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, true);
 }
 
 pub fn set(cpu: &mut CPU, operand1: Operand8bit, bit: u8) {
-    operand1.set_bit(cpu, bit);
+    let value = operand1.get(cpu);
+    operand1.set(cpu, bitwise::set_bit_8b(value, bit, true));
 }
 
 pub fn res(cpu: &mut CPU, operand1: Operand8bit, bit: u8) {
-    operand1.reset_bit(cpu, bit);
+    let value = operand1.get(cpu);
+    operand1.set(cpu, bitwise::set_bit_8b(value, bit, false));
 }

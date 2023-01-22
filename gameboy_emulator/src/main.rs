@@ -1,6 +1,7 @@
 pub mod actions;
-
 pub mod cpu;
+pub mod bitwise;
+
 use actions::Operand16bit;
 use actions::Operand8bit;
 use cpu::CPU;

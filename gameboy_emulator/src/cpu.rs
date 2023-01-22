@@ -1,3 +1,5 @@
+use crate::bitwise;
+
 const REGISTER_COUNT: usize = 8;
 const MEMORY_SIZE: usize = 65536; 
 
@@ -55,14 +57,15 @@ impl CPU {
         self.memory[address as usize] = value;
     }
 
-    pub fn get_memory_16bit(&self, address: u16) -> u16{
-        return self.get_memory_8bit(address) as u16
-            | (self.get_memory_8bit(address.wrapping_add(1)) as u16) << 8; 
+    pub fn get_memory_16bit(&self, address: u16) -> u16 {
+        return bitwise::get_16b_from_hl(
+            self.get_memory_8bit(address),
+            self.get_memory_8bit(address.wrapping_add(1)));
     }
 
     pub fn set_memory_16bit(&mut self, address: u16, value: u16) {
-        self.set_memory_8bit(address, value as u8);
-        self.set_memory_8bit(address.wrapping_add(1), (value >> 8) as u8);
+        self.set_memory_8bit(address, bitwise::get_low(value));
+        self.set_memory_8bit(address.wrapping_add(1), bitwise::get_high(value));
     }
     
     pub fn get_8bit_memory_from_sp(&mut self) -> u8 {
@@ -118,17 +121,14 @@ impl CPU {
     }
 
     pub fn get_flag(&self, flag: Flags) -> bool {
-        return self.get_register_8bit(Registers8bit::F)
-            >> (flag as u8) & 1 == 1;
+        return bitwise::get_bit_8b(
+            self.get_register_8bit(Registers8bit::F), flag as u8);
     }
 
     pub fn set_flag(&mut self, flag: Flags, value: bool) {
-        if value {
-            self.registers[Registers8bit::F as usize] |= 1 << flag as u8;
-        }
-        else {
-            self.registers[Registers8bit::F as usize] &= !(1 << flag as u8);
-        }
+        bitwise::assign_bit_8b(
+            &mut self.registers[Registers8bit::F as usize],
+            flag as u8, value);
     }
 
     pub fn get_register_8bit(&self, register: Registers8bit) -> u8 {
@@ -141,14 +141,15 @@ impl CPU {
 
     pub fn get_register_16bit(&self, register: Registers16bit) -> u16 {
         let index: usize = register as usize * 2;
-        return (self.registers[index] as u16) << 8
-              | self.registers[index + 1] as u16;
+        return bitwise::get_16b_from_hl(
+            self.registers[index],
+            self.registers[index + 1]);
     }
 
     pub fn set_register_16bit(&mut self, register: Registers16bit, value: u16) {
         let index: usize = register as usize * 2;
-        self.registers[index] = (value >> 8) as u8; 
-        self.registers[index + 1] = value as u8; 
+        self.registers[index] = bitwise::get_high(value); 
+        self.registers[index + 1] = bitwise::get_low(value);
     }
 
     pub fn get_sp(&self) -> u16 {
