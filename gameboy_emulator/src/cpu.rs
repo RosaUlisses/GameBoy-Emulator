@@ -99,6 +99,18 @@ impl CPU {
     pub fn set_16bit_memory_from_pc(&mut self, value: u16) {
         self.set_memory_16bit(self.program_counter, value);
     }
+
+    pub fn fetch_next_8bits_pc(&mut self) -> u8 {
+        let value = self.get_8bit_memory_from_pc();
+        self.program_counter += 1;
+        return value;
+    }
+
+    pub fn fetch_next_16bits_pc(&mut self) -> u16 {
+        let value = self.get_16bit_memory_from_pc();
+        self.program_counter += 2;
+        return value;
+    }
     
     pub fn get_8bit_memory_from_register(&mut self, register: Registers16bit) -> u8 {
         let address = self.get_register_16bit(register);
