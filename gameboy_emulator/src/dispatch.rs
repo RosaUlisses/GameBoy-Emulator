@@ -10,12 +10,6 @@ pub enum Operand8bit {
     Address(u16)
 }
 
-enum AddressingMode8bit {
-    Register(Registers8bit),
-    Immediate,
-    Address,
-}
-
 impl Operand8bit {
     pub fn get(self, cpu: &CPU) -> u8 {
         match self {
@@ -40,6 +34,43 @@ impl Operand8bit {
     }
 }
 
+#[derive(Clone, Copy)]
+pub enum Operand16bit {
+    Register(Registers16bit),
+    Immediate(u16),
+    Address(u16),
+}
+
+impl Operand16bit {
+    pub fn get(self, cpu: &mut CPU) -> u16 {
+        match self {
+            Operand16bit::Register(register)
+                => cpu.get_register_16bit(register),
+            Operand16bit::Immediate(immediate)
+                => immediate,
+            Operand16bit::Address(address)
+                => cpu.get_memory_16bit(address),
+        }
+    }
+    pub fn set(self, cpu: &mut CPU, value: u16) {
+        match self {
+            Operand16bit::Register(register)
+                => cpu.set_register_16bit(register, value),
+            Operand16bit::Immediate(_)
+                => (),
+            Operand16bit::Address(address)
+                => cpu.set_memory_16bit(address, value),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+enum AddressingMode8bit {
+    Register(Registers8bit),
+    Immediate,
+    Address,
+}
+
 impl AddressingMode8bit {
     pub fn fetch_operand(self, cpu: &mut CPU) -> Operand8bit {
         match self {
@@ -53,39 +84,11 @@ impl AddressingMode8bit {
     }
 }
 
-pub enum Operand16bit {
-    Register(Registers16bit),
-    Immediate(u16),
-    Address(u16),
-}
-
+#[derive(Clone, Copy)]
 enum AddressingMode16bit {
     Register(Registers16bit),
     Immediate,
     Address,
-}
-
-impl Operand16bit {
-    pub fn get(&self, cpu: &mut CPU) -> u16 {
-        match self {
-            Operand16bit::Register(register)
-                => cpu.get_register_16bit(*register),
-            Operand16bit::Immediate(immediate)
-                => *immediate,
-            Operand16bit::Address(address)
-                => cpu.get_memory_16bit(*address),
-        }
-    }
-    pub fn set(&self, cpu: &mut CPU, value: u16) {
-        match self {
-            Operand16bit::Register(register)
-                => cpu.set_register_16bit(*register, value),
-            Operand16bit::Immediate(_)
-                => (),
-            Operand16bit::Address(address)
-                => cpu.set_memory_16bit(*address, value),
-        }
-    }
 }
 
 impl AddressingMode16bit {
@@ -101,4 +104,45 @@ impl AddressingMode16bit {
     }
 }
 
-// enum
+type FnImplied = fn(&mut CPU);
+type FnOp8bit = fn(&mut CPU, Operand8bit);
+type FnOp8bit8bit = fn(&mut CPU, Operand8bit, Operand8bit);
+type FnOp16bit = fn(&mut CPU, Operand16bit);
+type FnOp16bit16bit = fn(&mut CPU, Operand16bit, Operand16bit);
+
+#[derive(Clone, Copy)]
+enum Instruction {
+    Implied(FnImplied),
+    Op8bit(FnOp8bit, AddressingMode8bit),
+    Op8bit8bit(FnOp8bit8bit, AddressingMode8bit, AddressingMode8bit),
+    Op16bit(FnOp16bit, AddressingMode16bit),
+    Op16bit16bit(FnOp16bit16bit, AddressingMode16bit, AddressingMode16bit),
+}
+
+impl Instruction {
+    pub fn execute(self, cpu: &mut CPU) {
+        match self {
+            Instruction::Implied(instruction) => {
+                instruction(cpu);
+            }
+            Instruction::Op8bit(instruction, operand1) => {
+                let op1 = operand1.fetch_operand(cpu);
+                instruction(cpu, op1);
+            }
+            Instruction::Op8bit8bit(instruction, operand1, operand2) => {
+                let op1 = operand1.fetch_operand(cpu);
+                let op2 = operand2.fetch_operand(cpu);
+                instruction(cpu, op1, op2);
+            }
+            Instruction::Op16bit(instruction, operand1) => {
+                let op1 = operand1.fetch_operand(cpu);
+                instruction(cpu, op1);
+            }
+            Instruction::Op16bit16bit(instruction, operand1, operand2) => {
+                let op1 = operand1.fetch_operand(cpu);
+                let op2 = operand2.fetch_operand(cpu);
+                instruction(cpu, op1, op2);
+            }
+        }
+    }
+}
