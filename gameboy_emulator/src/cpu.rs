@@ -102,14 +102,34 @@ impl CPU {
 
     pub fn fetch_next_8bits_pc(&mut self) -> u8 {
         let value = self.get_8bit_memory_from_pc();
-        self.program_counter += 1;
+        self.program_counter = self.program_counter.wrapping_add(1);
+        return value;
+    }
+    
+    pub fn fetch_next_16bits_pc(&mut self) -> u16 {
+        let value = self.get_16bit_memory_from_pc();
+        self.program_counter = self.program_counter.wrapping_add(2);
         return value;
     }
 
-    pub fn fetch_next_16bits_pc(&mut self) -> u16 {
-        let value = self.get_16bit_memory_from_pc();
-        self.program_counter += 2;
-        return value;
+    pub fn push_8bit_sp(&mut self, value: u8) {
+        self.set_8bit_memory_from_sp(value);
+        self.stack_pointer = self.stack_pointer.wrapping_sub(1);
+    }
+
+    pub fn pop_8bit_sp(&mut self) -> u8 {
+        self.stack_pointer = self.stack_pointer.wrapping_add(1);
+        return self.get_8bit_memory_from_sp();
+    }
+
+    pub fn push_16bit_sp(&mut self, value: u16) {
+        self.set_16bit_memory_from_sp(value);
+        self.stack_pointer = self.stack_pointer.wrapping_sub(2);
+    }
+
+    pub fn pop_16bit_sp(&mut self) -> u16 {
+        self.stack_pointer = self.stack_pointer.wrapping_add(2);
+        return self.get_16bit_memory_from_sp();
     }
     
     pub fn get_8bit_memory_from_register(&mut self, register: Registers16bit) -> u8 {
