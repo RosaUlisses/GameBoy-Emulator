@@ -1,6 +1,9 @@
+use serde_json::Map;
+use std::fs;
 use crate::cpu::CPU;
 use crate::cpu::Registers16bit;
 use crate::cpu::Registers8bit;
+use crate::instructions;
 
 
 #[derive(Clone, Copy)]
@@ -65,10 +68,10 @@ impl Operand16bit {
 }
 
 #[derive(Clone, Copy)]
-enum AddressingMode8bit {
+pub enum AddressingMode8bit {
     Register(Registers8bit),
     Immediate,
-    Address,
+    Address(Registers16bit),
 }
 
 impl AddressingMode8bit {
@@ -78,14 +81,14 @@ impl AddressingMode8bit {
                 => Operand8bit::Register(register),
             AddressingMode8bit::Immediate
                 => Operand8bit::Immediate(cpu.fetch_next_8bits_pc()),
-            AddressingMode8bit::Address
-                => Operand8bit::Address(cpu.fetch_next_16bits_pc()),
+            AddressingMode8bit::Address(register)
+                => Operand8bit::Address(cpu.get_register_16bit(register)),
         }
     }
 }
 
 #[derive(Clone, Copy)]
-enum AddressingMode16bit {
+pub enum AddressingMode16bit {
     Register(Registers16bit),
     Immediate,
     Address,
@@ -111,7 +114,7 @@ type FnOp16bit = fn(&mut CPU, Operand16bit);
 type FnOp16bit16bit = fn(&mut CPU, Operand16bit, Operand16bit);
 
 #[derive(Clone, Copy)]
-enum Instruction {
+pub enum Instruction {
     Implied(FnImplied),
     Op8bit(FnOp8bit, AddressingMode8bit),
     Op8bit8bit(FnOp8bit8bit, AddressingMode8bit, AddressingMode8bit),
@@ -145,4 +148,101 @@ impl Instruction {
             }
         }
     }
+}
+
+type JsonObject = serde_json::Value;
+type Object = Option<Map<String, serde_json::value::Value>>;
+
+pub fn instanciate_adressing_mode_8bit(literal: &str) -> AddressingMode8bit {
+    match literal {
+        "A" => AddressingMode8bit::Register(Registers8bit::A),
+        "B" => AddressingMode8bit::Register(Registers8bit::B),
+        "C" => AddressingMode8bit::Register(Registers8bit::C),
+        "D" => AddressingMode8bit::Register(Registers8bit::D),
+        "E" => AddressingMode8bit::Register(Registers8bit::E),
+        "H" => AddressingMode8bit::Register(Registers8bit::H),
+        "L" => AddressingMode8bit::Register(Registers8bit::L),
+        "d8" => AddressingMode8bit::Immediate,
+        "(BC)" => AddressingMode8bit::Address(Registers16bit::BC),
+        "(HL)" => AddressingMode8bit::Address(Registers16bit::HL),
+        "(DE)" => AddressingMode8bit::Address(Registers16bit::DE),
+        &_ => todo!("Levanatar excessao")
+    }
+}
+
+pub fn instanciate_8bit_alu_instruction(instruction_json: &JsonObject) -> Instruction {
+    let mnemonic  = instruction_json["mnemonic"].as_str().unwrap();
+    let function: FnOp8bit;
+    let addressing_mode = instanciate_adressing_mode_8bit(instruction_json["operand2"].as_str().unwrap());  
+    match mnemonic {
+        "ADD" => function = instructions::add,
+        "SUB" => function = instructions::sub,
+        "INC" => function = instructions::inc,
+        "DEC" => function = instructions::dec,
+        "ADC" => function = instructions::adc,
+        "SBC" => function = instructions::sbc,
+        "AND" => function = instructions::inc,
+        &_ => todo!("Levanatar excessao")
+    }
+    Instruction::Op8bit(function, addressing_mode);
+}
+
+pub fn instanciate_instruction(instruction_json: &JsonObject) -> Instruction{
+
+    let mnemonic  = instruction_json["mnemonic"].as_str().unwrap();
+
+    match mnemonic {
+        "ADD" => {
+            let function = instructions::add;
+            let addressing_mode = instanciate_adressing_mode_8bit(instruction_json["operand2"].as_str().unwrap());  
+            Instruction::Op8bit(function, addressing_mode)
+        } 
+        "SUB" => {
+            let function = instructions::sub;
+            let addressing_mode = instanciate_adressing_mode_8bit(instruction_json["operand2"].as_str().unwrap());  
+            Instruction::Op8bit(function, addressing_mode)
+        }
+        "INC" => {
+            let function = instructions::inc;
+            let addressing_mode = instanciate_adressing_mode_8bit(instruction_json["operand1"].as_str().unwrap());  
+            Instruction::Op8bit(function, addressing_mode)
+        }
+        "DEC" => {
+            let function = instructions::dec;
+            let addressing_mode = instanciate_adressing_mode_8bit(instruction_json["operand1"].as_str().unwrap());  
+            Instruction::Op8bit(function, addressing_mode)
+        }
+        "ADC" => {
+            let function = instructions::adc;
+            let addressing_mode = instanciate_adressing_mode_8bit(instruction_json["operand2"].as_str().unwrap());  
+            Instruction::Op8bit(function, addressing_mode)
+        }
+        "SBC" => {
+            let function = instructions::sbc;
+            let addressing_mode = instanciate_adressing_mode_8bit(instruction_json["operand2"].as_str().unwrap());  
+            Instruction::Op8bit(function, addressing_mode)
+        }
+        "AND" => {
+            let function = instructions::inc;
+            let addressing_mode = instanciate_adressing_mode_8bit(instruction_json["operand1"].as_str().unwrap());  
+            Instruction::Op8bit(function, addressing_mode)
+        }
+
+        &_ => todo!("Levanatar excessao")
+    }
+}
+
+pub fn instaciate_unprefixed_instructions(instructions: JsonObject) {
+
+    for (_, value) in instructions.as_object().unwrap() {
+        instanciate_instruction(value);
+    }
+    
+}
+
+pub fn instanciate_instructions() {
+   let text = fs::read_to_string("C:\\Programação\\GameBoy-Emulator\\gameboy_emulator\\src\\opcodes.json").
+    expect("Error, it is not possible to read the file!");
+
+   let opcodes : JsonObject = serde_json::from_str(&text).expect("JSON was not well-formatted");
 }
