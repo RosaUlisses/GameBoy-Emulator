@@ -216,21 +216,21 @@ pub fn daa(cpu: &mut CPU) {
 
     if !cpu.get_flag(Flags::N) {
          
-            if cpu.get_flag(Flags::C) || (a_value > 0x99) {
-                    a_value = a_value.wrapping_add(0x60);
-                    cpu.set_flag(Flags::C, true);
-            }
-            if cpu.get_flag(Flags::H) || ((a_value & 0x0f) > 0x09) {
-                    a_value = a_value.wrapping_add(0x06);
-            } 
+        if cpu.get_flag(Flags::C) || (a_value > 0x99) {
+                a_value = a_value.wrapping_add(0x60);
+                cpu.set_flag(Flags::C, true);
+        }
+        if cpu.get_flag(Flags::H) || ((a_value & 0x0f) > 0x09) {
+                a_value = a_value.wrapping_add(0x06);
+        } 
     }
     else {
-            if cpu.get_flag(Flags::C) {
-                    a_value = a_value.wrapping_sub(0x60);
-            }
-            if cpu.get_flag(Flags::H) {
-                    a_value = a_value.wrapping_sub(0x06);
-            }
+        if cpu.get_flag(Flags::C) {
+                a_value = a_value.wrapping_sub(0x60);
+        }
+        if cpu.get_flag(Flags::H) {
+                a_value = a_value.wrapping_sub(0x06);
+        }
     }
 
     cpu.set_flag(Flags::Z, a_value == 0);
@@ -429,7 +429,7 @@ pub fn jrc(cpu: &mut CPU, operand1: Operand8bit) {
 }
 
 pub fn call(cpu: &mut CPU, operand1: Operand16bit) {
-    let next_instruction = cpu.get_memory_16bit(cpu.program_counter + 2);
+    let next_instruction = cpu.program_counter;
     cpu.push_16bit_sp(next_instruction);
     jp(cpu, operand1);
 }
@@ -459,7 +459,7 @@ pub fn callc(cpu: &mut CPU, operand1: Operand16bit) {
 
 pub fn ret(cpu: &mut CPU) {
     let address = cpu.pop_16bit_sp();
-    jp(cpu, Operand16bit::Immediate(address));
+    cpu.set_pc(address);
 }
 
 pub fn retnz(cpu: &mut CPU) {
@@ -485,7 +485,6 @@ pub fn retc(cpu: &mut CPU) {
     }
 }
 
-pub fn rst(cpu : &mut CPU, operand1: Operand8bit) {
-    let value = operand1.get(cpu) as u16;
-    jp(cpu, Operand16bit::Immediate(value));
+pub fn rst(cpu : &mut CPU, operand1: Operand16bit) {
+    call(cpu, operand1);
 }
