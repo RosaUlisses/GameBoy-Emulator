@@ -12,6 +12,18 @@ pub fn ld(cpu: &mut CPU, operand1: Operand8bit, operand2: Operand8bit) {
     operand1.set(cpu, value);
 }
 
+pub fn ld_ah(cpu: &mut CPU, operand1: Operand8bit) {
+    let address: u16 = 0xFF00 + (operand1.get(cpu) as u16);
+    let value = cpu.get_memory_8bit(address);
+    cpu.set_register_8bit(Registers8bit::A, value);   
+}
+
+pub fn ld_ha(cpu: &mut CPU, operand1: Operand8bit) {
+    let address: u16 = 0xFF00 + (operand1.get(cpu) as u16);
+    let value = cpu.get_memory_8bit(address);
+    cpu.set_memory_8bit(address, value);
+}
+
 pub fn ldd_ahl(cpu: &mut CPU) {
     let value = cpu.get_8bit_memory_from_register(Registers16bit::HL);  
     cpu.set_register_8bit(Registers8bit::A, value);
@@ -56,6 +68,18 @@ pub fn add(cpu: &mut CPU, operand1: Operand8bit) {
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, (value1 & 0x0F) + (value2 & 0x0F) >= 0x10);
     cpu.set_flag(Flags::C, sum >= 0x100);
+}
+
+pub fn add_hl(cpu: &mut CPU, operand2: Operand16bit) {
+    let value1: u16 = cpu.get_register_16bit(Registers16bit::HL);
+    let value2: u16 = operand2.get(cpu);
+
+    let sum: u16 = value1.wrapping_add(value2);
+    cpu.set_register_16bit(Registers16bit::HL, sum);
+
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, (value1 & 0x7FF) + (value2 & 0x7FF) >= 0x800);
+    cpu.set_flag(Flags::C, sum >= 0x10000)
 }
 
 pub fn adc(cpu: &mut CPU, operand1: Operand8bit) {
@@ -429,7 +453,7 @@ pub fn jrc(cpu: &mut CPU, operand1: Operand8bit) {
 }
 
 pub fn call(cpu: &mut CPU, operand1: Operand16bit) {
-    let next_instruction = cpu.program_counter;
+    let next_instruction: u16 = cpu.program_counter;
     cpu.push_16bit_sp(next_instruction);
     jp(cpu, operand1);
 }
