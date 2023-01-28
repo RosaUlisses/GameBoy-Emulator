@@ -3,7 +3,6 @@ use crate::cpu::Registers16bit;
 use crate::cpu::Registers8bit;
 use crate::instructions;
 
-
 #[derive(Clone, Copy)]
 pub enum Operand8bit {
     Register(Registers8bit),
@@ -121,6 +120,7 @@ pub enum Instruction {
     Op8bit8bit(FnOp8bit8bit, AddressingMode8bit, AddressingMode8bit),
     Op16bit(FnOp16bit, AddressingMode16bit),
     Op16bit16bit(FnOp16bit16bit, AddressingMode16bit, AddressingMode16bit),
+    PrefixExtended,
 }
 
 impl Instruction {
@@ -147,6 +147,41 @@ impl Instruction {
                 let op2 = operand2.fetch_operand(cpu);
                 instruction(cpu, op1, op2);
             }
+            Instruction::PrefixExtended => {
+                let opcode = cpu.fetch_next_8bits_pc();
+                Instruction::exec_extended(cpu, opcode);
+            }
+        }
+    }
+
+    pub fn exec_extended(cpu: &mut CPU, opcode: u8) {
+        let operation = opcode >> 6;
+        let op1 = (opcode >> 3) & 0b111;
+        let op2 = opcode & 0b111;
+        let register_operands : [Operand8bit; 8] = [
+            Operand8bit::Register(Registers8bit::B),
+            Operand8bit::Register(Registers8bit::C),
+            Operand8bit::Register(Registers8bit::D),
+            Operand8bit::Register(Registers8bit::E),
+            Operand8bit::Register(Registers8bit::H),
+            Operand8bit::Register(Registers8bit::L),
+            Operand8bit::Address(cpu.get_register_16bit(Registers16bit::HL)),
+            Operand8bit::Register(Registers8bit::A),
+        ];
+        match operation {
+            0 => {
+                
+            }
+            1 => {
+                bit(cpu, )
+            }
+            2 => {
+
+            }
+            3 => {
+
+            }
+            _ => unreachable!()
         }
     }
 }
