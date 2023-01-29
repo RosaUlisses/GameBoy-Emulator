@@ -497,6 +497,22 @@ pub fn retc(cpu: &mut CPU) {
     }
 }
 
-pub fn rst(cpu : &mut CPU, operand1: Operand16bit) {
-    call(cpu, operand1);
+pub fn rst(cpu: &mut CPU, operand1: Operand16bit) {
+    cpu.push_16bit_sp(cpu.get_pc());
+    let value = operand1.get(cpu);
+    cpu.set_pc(value);
 }
+
+pub fn ei(cpu: &mut CPU) {
+    !todo!("Implement Enable interrupt")
+}
+
+pub fn di(cpu: &mut CPU) {
+    !todo!("Implement Disable interrupt")
+}
+
+pub fn reti(cpu: &mut CPU) {
+    ei(cpu);
+    ret(cpu);
+}
+

@@ -36,7 +36,8 @@ pub struct CPU {
     pub registers: [u8; REGISTER_COUNT],
     pub stack_pointer: u16,
     pub program_counter: u16,
-    pub memory: [u8; MEMORY_SIZE]
+    pub memory: [u8; MEMORY_SIZE],
+    pub IME_flag: bool
 }
 
 impl CPU {
@@ -195,6 +196,7 @@ impl CPU {
     pub fn get_pc(&self) -> u16 {
         return self.program_counter;
     }
+
     pub fn set_pc(&mut self, value: u16) {
         self.program_counter = value;
     }
