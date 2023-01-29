@@ -22,20 +22,50 @@ pub fn ld_ah(cpu: &mut CPU, operand1: Operand8bit) {
 
 pub fn ld_ha(cpu: &mut CPU, operand1: Operand8bit) {
     let address: u16 = 0xFF00 + (operand1.get(cpu) as u16);
-    let value = cpu.get_memory_8bit(address);
+    let value = cpu.get_register_8bit(Registers8bit::A); 
     cpu.set_memory_8bit(address, value);
 }
 
-pub fn ldd_ahl(cpu: &mut CPU) {
+pub fn ld_ac(cpu: &mut CPU) {
+    let address: u16 = 0xFF00 + (cpu.get_register_8bit(Registers8bit::C) as u16);
+    let value = cpu.get_memory_8bit(address);
+    cpu.set_register_8bit(Registers8bit::A, value);
+}
+
+pub fn ld_ca(cpu: &mut CPU) {
+    let address: u16 = 0xFF00 + (cpu.get_register_8bit(Registers8bit::C) as u16);
+    let value = cpu.get_register_8bit(Registers8bit::A);
+    cpu.set_memory_8bit(address, value);
+}
+
+pub fn ld_hla(cpu: &mut CPU) {
+    let value = cpu.get_register_8bit(Registers8bit::A);
+    cpu.set_8bit_memory_from_register(value, Registers16bit::HL);
+}
+
+pub fn ld_ahl(cpu: &mut CPU) {
     let value = cpu.get_8bit_memory_from_register(Registers16bit::HL);  
     cpu.set_register_8bit(Registers8bit::A, value);
-    dec16(cpu, Operand16bit::Register(Registers16bit::HL));
+}
+
+pub fn ldi_ahl(cpu: &mut CPU) {
+    ld_ahl(cpu);
+    inc_16bit(cpu, Operand16bit::Register(Registers16bit::HL));
+}
+
+pub fn ldi_hla(cpu: &mut CPU) {
+    ld_hla(cpu);
+    inc_16bit(cpu, Operand16bit::Register(Registers16bit::HL));
+}
+
+pub fn ldd_ahl(cpu: &mut CPU) {
+    ld_ahl(cpu);
+    dec_16bit(cpu, Operand16bit::Register(Registers16bit::HL));
 }
 
 pub fn ldd_hla(cpu : &mut CPU) {
-    let value = cpu.get_register_8bit(Registers8bit::A);
-    cpu.set_8bit_memory_from_register(value, Registers16bit::HL);
-    dec16(cpu, Operand16bit::Register(Registers16bit::HL));
+    ld_hla(cpu);
+    dec_16bit(cpu, Operand16bit::Register(Registers16bit::HL));
 }
 
 pub fn ld_16bit(cpu: &mut CPU, operand1: Operand16bit, operand2: Operand16bit) {
@@ -50,12 +80,6 @@ pub fn ldhl(cpu : &mut CPU, operand1: Operand8bit) {
     cpu.set_register_16bit(Registers16bit::HL, result);
 }
 
-/*
-    (The Stack Pointer automatically decrements before it puts something
-    onto the stack so it is perfectly acceptable to assign it a value
-    which points to a memory address which is one location past the end
-    of available RAM.)
-*/
 pub fn push(cpu: &mut CPU, operand1: Operand16bit) {
     let value = operand1.get(cpu);
     cpu.push_16bit_sp(value);
@@ -215,12 +239,12 @@ pub fn addsp(cpu: &mut CPU, operand1: Operand8bit) {
     cpu.set_flag(Flags::C, overflow);
 }
 
-pub fn inc16(cpu: &mut CPU, operand1: Operand16bit) {
+pub fn inc_16bit(cpu: &mut CPU, operand1: Operand16bit) {
     let value = operand1.get(cpu).wrapping_add(1);
     operand1.set(cpu, value)
 }
 
-pub fn dec16(cpu: &mut CPU, operand1: Operand16bit) {
+pub fn dec_16bit(cpu: &mut CPU, operand1: Operand16bit) {
     let value = operand1.get(cpu).wrapping_sub(1);
     operand1.set(cpu, value)
 }
@@ -285,9 +309,7 @@ pub fn scf(cpu: &mut CPU) {
     cpu.set_flag(Flags::H, false);
 }
 
-pub fn nop(_: &mut CPU) {
-    return;
-}
+
 
 pub fn rlc(cpu: &mut CPU, operand1: Operand8bit) {
     let value = operand1.get(cpu);
@@ -524,11 +546,15 @@ pub fn di(cpu: &mut CPU) {
     todo!("Implement Disable interrupt")
 }
 
+pub fn nop(_: &mut CPU) {
+    return;
+}
+
 pub fn stop(cpu: &mut CPU, _: Operand8bit) {
     todo!("Stop instruction");
 }
 
-pub fn halt(cpu: &mut CPU) {
+pub fn halt(_: &mut CPU) {
     todo!("Halt instruction");
 }
 
