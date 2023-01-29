@@ -1,3 +1,5 @@
+use std::result;
+
 use crate::cpu::CPU;
 use crate::cpu::Flags;
 use crate::cpu::Registers16bit;
@@ -41,6 +43,13 @@ pub fn ld_16bit(cpu: &mut CPU, operand1: Operand16bit, operand2: Operand16bit) {
     operand1.set(cpu, value);
 }
 
+pub fn ldhl(cpu : &mut CPU, operand1: Operand8bit) {
+    let value = operand1.get(cpu) as i16 as u16;
+    let result = cpu.get_sp().wrapping_add(value);
+
+    cpu.set_register_16bit(Registers16bit::HL, result);
+}
+
 /*
     (The Stack Pointer automatically decrements before it puts something
     onto the stack so it is perfectly acceptable to assign it a value
@@ -58,57 +67,62 @@ pub fn pop(cpu: &mut CPU, operand1: Operand16bit) {
 }
 
 pub fn add(cpu: &mut CPU, operand1: Operand8bit) {
-    let value1: u16 = cpu.get_register_8bit(Registers8bit::A) as u16;
-    let value2: u16 = operand1.get(cpu) as u16;
+    let value1 = cpu.get_register_8bit(Registers8bit::A);
+    let value2 = operand1.get(cpu);
 
-    let sum: u16 = value1.wrapping_add(value2);
-    cpu.set_register_8bit(Registers8bit::A, sum as u8);
+    let (sum, overflow) = value1.overflowing_add(value2);
+    cpu.set_register_8bit(Registers8bit::A, sum);
     
     cpu.set_flag(Flags::Z, sum == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, (value1 & 0x0F) + (value2 & 0x0F) >= 0x10);
-    cpu.set_flag(Flags::C, sum >= 0x100);
+    cpu.set_flag(Flags::C, overflow);
 }
 
 pub fn adc(cpu: &mut CPU, operand1: Operand8bit) {
-    let value1: u16 = cpu.get_register_8bit(Registers8bit::A) as u16;
-    let value2: u16 = operand1.get(cpu) as u16;
+    let value1 = cpu.get_register_8bit(Registers8bit::A);
+    let value2 = operand1.get(cpu);
 
-    let carry: u16 = cpu.get_flag(Flags::C) as u16; // 1 or 0
-    let sum = value1.wrapping_add(value2).wrapping_add(carry);
-    cpu.set_register_8bit(Registers8bit::A, sum as u8);
+    let carry = cpu.get_flag(Flags::C) as u8; // 1 or 0
+
+    let (sum, overflow1) = value1.overflowing_add(value2);
+    let (sum, overflow2) = sum.overflowing_add(carry);
+    cpu.set_register_8bit(Registers8bit::A, sum);
     
     cpu.set_flag(Flags::Z, sum == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, (value1 & 0x0F) + (value2 & 0x0F) + carry >= 0x10);
-    cpu.set_flag(Flags::C, sum >= 0x100);
+    cpu.set_flag(Flags::C, overflow1 || overflow2);
 }
 
 pub fn sub(cpu: &mut CPU, operand1: Operand8bit) {
-    let value1: u16 = cpu.get_register_8bit(Registers8bit::A) as u16;
-    let value2: u16 = operand1.get(cpu) as u16;
+    let value1 = cpu.get_register_8bit(Registers8bit::A);
+    let value2 = operand1.get(cpu);
 
-    let difference: u16 = value1.wrapping_sub(value2);
-    cpu.set_register_8bit(Registers8bit::A, difference as u8);
+    let (diff, underflow) = value1.overflowing_sub(value2);
+    cpu.set_register_8bit(Registers8bit::A, diff);
 
-    cpu.set_flag(Flags::Z, difference == 0);
+    cpu.set_flag(Flags::Z, diff == 0);
     cpu.set_flag(Flags::N, true);
     cpu.set_flag(Flags::H, (value1 & 0x0F) < (value2 & 0x0F));
-    cpu.set_flag(Flags::C, value1 < value2);
+    cpu.set_flag(Flags::C, underflow);
 }
 
 pub fn sbc(cpu: &mut CPU, operand1: Operand8bit) {
-    let value1: u16 = cpu.get_register_8bit(Registers8bit::A) as u16;
-    let value2: u16 = operand1.get(cpu) as u16;
+    let value1 = cpu.get_register_8bit(Registers8bit::A);
+    let value2 = operand1.get(cpu);
 
-    let carry: u16 = cpu.get_flag(Flags::C) as u16; // 1 or 0
-    let difference = value1.wrapping_sub(value2).wrapping_add(carry);
-    cpu.set_register_8bit(Registers8bit::A, difference as u8);
+    let carry = cpu.get_flag(Flags::C) as u8; // 1 or 0
 
-    cpu.set_flag(Flags::Z, difference == 0);
+    let (diff, underflow1) = value1.overflowing_sub(value2);
+    let (diff, underflow2) = diff.overflowing_sub(carry);
+    cpu.set_register_8bit(Registers8bit::A, diff);
+
+    cpu.set_flag(Flags::Z, diff == 0);
     cpu.set_flag(Flags::N, true);
     cpu.set_flag(Flags::H, (value1 & 0x0F) < (value2 & 0x0F));
-    cpu.set_flag(Flags::C, value1 < value2);
+    cpu.set_flag(Flags::C, underflow1 || underflow2);
+    // cpu.set_flag(Flags::C, value1 < value2);
 }
 
 pub fn and(cpu: &mut CPU, operand1: Operand8bit) {
@@ -178,27 +192,27 @@ pub fn dec(cpu: &mut CPU, operand1: Operand8bit) {
 }
 
 pub fn addhl(cpu: &mut CPU, operand1: Operand16bit) {
-    let value1 = cpu.get_register_16bit(Registers16bit::HL) as u32;
-    let value2 = operand1.get(cpu) as u32;
+    let value1 = cpu.get_register_16bit(Registers16bit::HL);
+    let value2 = operand1.get(cpu);
 
-    let sum: u32 = value1.wrapping_add(value2);
+    let (sum, overflow) = value1.overflowing_add(value2);
     cpu.set_register_16bit(Registers16bit::HL, sum as u16);
 
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, (value1 & 0x0FFF) + (value2 & 0x0FFF) >= 0x1000);
-    cpu.set_flag(Flags::C, sum >= 0x10000);
+    cpu.set_flag(Flags::C, overflow);
 }
 
 pub fn addsp(cpu: &mut CPU, operand1: Operand8bit) {
-    let value1 = cpu.get_sp() as u32;
-    let value2 = operand1.get(cpu) as i32 as u32;
+    let value1 = cpu.get_sp();
+    let value2 = operand1.get(cpu) as i16 as u16;
 
-    let sum: u32 = value1.wrapping_add(value2);
-    cpu.set_sp(sum as u16);
+    let (sum, overflow) = value1.overflowing_add(value2);
+    cpu.set_sp(sum);
 
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, (value1 & 0x0FFF) + (value2 & 0x0FFF) >= 0x1000);
-    cpu.set_flag(Flags::C, sum >= 0x10000);
+    cpu.set_flag(Flags::C, overflow);
 }
 
 pub fn inc16(cpu: &mut CPU, operand1: Operand16bit) {
@@ -276,89 +290,90 @@ pub fn nop(_: &mut CPU) {
 }
 
 pub fn rlc(cpu: &mut CPU, operand1: Operand8bit) {
-    let a_value = operand1.get(cpu); 
-    let shifted_value = a_value << 1;
+    let value = operand1.get(cpu);
+    let result = value.rotate_left(1); 
     
-    operand1.set(cpu, shifted_value);
+    operand1.set(cpu, result);
 
-    cpu.set_flag(Flags::Z, shifted_value == 0);
+    cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, (a_value & 1) == 1);
+    cpu.set_flag(Flags::C, (result & 1) != 0);
 }
 
 pub fn rl(cpu: &mut CPU, operand1: Operand8bit) {
-    let a_value = operand1.get(cpu);
+    let value = operand1.get(cpu);
+    let (tmp, carry) = value.overflowing_shl(1); 
+    let result = tmp | (cpu.get_flag(Flags::C) as u8);
 
-    // isso da certo ?
-    let c_flag = cpu.get_flag(Flags::C) as u8; 
-    let shifted_value = (a_value << 1) | (c_flag >> 7);
+    operand1.set(cpu, result);
 
-    operand1.set(cpu, shifted_value);
-
-    cpu.set_flag(Flags::Z, shifted_value == 0);
+    cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, (a_value & 1) == 1);
+    cpu.set_flag(Flags::C, carry);
 }
 
 pub fn rrc(cpu: &mut CPU, operand1: Operand8bit) {
-    let a_value = operand1.get(cpu); 
-    let shifted_value = a_value >> 1;
-    operand1.set(cpu, shifted_value);
+    let value = operand1.get(cpu);
+    let result = value.rotate_right(1); 
+    
+    operand1.set(cpu, result);
 
-    cpu.set_flag(Flags::Z, shifted_value == 0);
+    cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, (a_value & 0x80) == 1);
+    cpu.set_flag(Flags::C, (value & 1) != 0);
 }
 
 pub fn rr(cpu: &mut CPU, operand1: Operand8bit) {
-    let a_value = operand1.get(cpu);
-    // isso da certo ?
-    let c_flag = cpu.get_flag(Flags::C) as u8; 
-    let shifted_value = (a_value >> 1) | c_flag;
+    let value = operand1.get(cpu);
+    let (tmp, carry) = value.overflowing_shr(1); 
+    let result = tmp | ((cpu.get_flag(Flags::C) as u8) << 7);
 
-    operand1.set(cpu, shifted_value);
+    operand1.set(cpu, result);
 
-    cpu.set_flag(Flags::Z, shifted_value == 0);
+    cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, (a_value & 0x80) == 1);
+    cpu.set_flag(Flags::C, carry);
 }
 
 pub fn sla(cpu: &mut CPU, operand1: Operand8bit) {
-    let a_value = operand1.get(cpu); 
-    let shifted_value = (a_value << 1) & !(1);
-    
-    operand1.set(cpu, shifted_value);
+    let value = operand1.get(cpu);
+    let (result, carry) = value.overflowing_shl(1); 
 
-    cpu.set_flag(Flags::Z, shifted_value == 0);
+    operand1.set(cpu, result);
+
+    cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, (a_value & 1) == 1);   
+    cpu.set_flag(Flags::C, carry);
 }
 
 pub fn sra(cpu: &mut CPU, operand1: Operand8bit) {
-    let a_value = operand1.get(cpu); 
-    let shifted_value = (a_value >> 1) & !(0x80);
-    operand1.set(cpu, shifted_value);
+    let value = operand1.get(cpu);
+    let (tmp, carry) = value.overflowing_shr(1); 
+    let result = tmp | (value & 0x80);
 
-    cpu.set_flag(Flags::Z, shifted_value == 0);
+    operand1.set(cpu, result);
+
+    cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, (a_value & 0x80) == 1);
+    cpu.set_flag(Flags::C, carry);
 }
 
 pub fn srl(cpu: &mut CPU, operand1: Operand8bit) {
-    let a_value = operand1.get(cpu); 
-    let shifted_value = a_value >> 1;
-    operand1.set(cpu, shifted_value);
+    let value = operand1.get(cpu);
+    let (result, carry) = value.overflowing_shr(1); 
 
-    cpu.set_flag(Flags::Z, shifted_value == 0);
+    operand1.set(cpu, result);
+
+    cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, (a_value & 0x80) == 1);
+    cpu.set_flag(Flags::C, carry);
 }
 
 pub fn bit(cpu: &mut CPU, operand1: Operand8bit, bit: u8){
@@ -412,8 +427,9 @@ pub fn jphl(cpu: &mut CPU) {
 }
 
 pub fn jr(cpu: &mut CPU, operand1: Operand8bit) {
-    let value = ((operand1.get(cpu) as i16) + cpu.program_counter as i16) as u16;
-    cpu.set_pc(value);
+    let value = operand1.get(cpu) as i16 as u16;
+    let result = cpu.get_pc().wrapping_add(value);
+    cpu.set_pc(result);
 }
 
 pub fn jrnz(cpu: &mut CPU, operand1: Operand8bit) {
@@ -441,8 +457,7 @@ pub fn jrc(cpu: &mut CPU, operand1: Operand8bit) {
 }
 
 pub fn call(cpu: &mut CPU, operand1: Operand16bit) {
-    let next_instruction: u16 = cpu.program_counter;
-    cpu.push_16bit_sp(next_instruction);
+    cpu.push_16bit_sp(cpu.get_pc());
     jp(cpu, operand1);
 }
 
@@ -498,17 +513,23 @@ pub fn retc(cpu: &mut CPU) {
 }
 
 pub fn rst(cpu: &mut CPU, operand1: Operand16bit) {
-    cpu.push_16bit_sp(cpu.get_pc());
-    let value = operand1.get(cpu);
-    cpu.set_pc(value);
+    call(cpu, operand1);
 }
 
 pub fn ei(cpu: &mut CPU) {
-    !todo!("Implement Enable interrupt")
+    todo!("Implement Enable interrupt")
 }
 
 pub fn di(cpu: &mut CPU) {
-    !todo!("Implement Disable interrupt")
+    todo!("Implement Disable interrupt")
+}
+
+pub fn stop(cpu: &mut CPU, _: Operand8bit) {
+    todo!("Stop instruction");
+}
+
+pub fn halt(cpu: &mut CPU) {
+    todo!("Halt instruction");
 }
 
 pub fn reti(cpu: &mut CPU) {
