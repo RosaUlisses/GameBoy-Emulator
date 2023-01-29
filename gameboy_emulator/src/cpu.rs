@@ -37,7 +37,7 @@ pub struct CPU {
     pub stack_pointer: u16,
     pub program_counter: u16,
     pub memory: [u8; MEMORY_SIZE],
-    pub IME_flag: bool
+    pub IME_flag: bool,
 }
 
 impl CPU {
@@ -46,7 +46,8 @@ impl CPU {
             registers: [0; 8],
             stack_pointer: 0,
             program_counter: 0,
-            memory: [0; MEMORY_SIZE]
+            memory: [0; MEMORY_SIZE],
+            IME_flag: false
         };
     }
 
@@ -199,6 +200,14 @@ impl CPU {
 
     pub fn set_pc(&mut self, value: u16) {
         self.program_counter = value;
+    }
+
+    pub fn set_IME_flag(&mut self) {
+        self.IME_flag = true;
+    }
+
+    pub fn reset_IME_flag(&mut self) {
+        self.IME_flag = false;
     }
 
 }
