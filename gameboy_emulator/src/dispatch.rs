@@ -1,7 +1,7 @@
 use crate::cpu::CPU;
 use crate::cpu::Registers16bit;
 use crate::cpu::Registers8bit;
-use crate::instructions;
+use crate::instructions::*;
 
 #[derive(Clone, Copy)]
 pub enum Operand8bit {
@@ -69,6 +69,7 @@ pub enum AddressingMode8bit {
     Register(Registers8bit),
     Immediate,
     Address,
+    Fixed(u8),
 }
 
 #[derive(Clone, Copy)]
@@ -88,6 +89,8 @@ impl AddressingMode8bit {
                 => Operand8bit::Immediate(cpu.fetch_next_8bits_pc()),
             AddressingMode8bit::Address
                 => Operand8bit::Address(cpu.fetch_next_16bits_pc()),
+            AddressingMode8bit::Fixed(value)
+                => Operand8bit::Immediate(value),
         }
     }
 }
@@ -123,6 +126,10 @@ pub enum Instruction {
     PrefixExtended,
 }
 
+const INSTRUCTIONS: [Instruction; 256] = [
+    Instruction::Implied(nop); 256
+];
+
 impl Instruction {
     pub fn execute(self, cpu: &mut CPU) {
         match self {
@@ -155,9 +162,6 @@ impl Instruction {
     }
 
     pub fn exec_extended(cpu: &mut CPU, opcode: u8) {
-        let operation = opcode >> 6;
-        let op1 = (opcode >> 3) & 0b111;
-        let op2 = opcode & 0b111;
         let register_operands : [Operand8bit; 8] = [
             Operand8bit::Register(Registers8bit::B),
             Operand8bit::Register(Registers8bit::C),
@@ -168,19 +172,19 @@ impl Instruction {
             Operand8bit::Address(cpu.get_register_16bit(Registers16bit::HL)),
             Operand8bit::Register(Registers8bit::A),
         ];
+        const OPERATIONS : [FnOp8bit; 8] = [
+            rlc, rrc, rl, rr, sla, sra, swap, srl
+        ];
+
+        let operation = opcode >> 6;
+        let op1 = (opcode >> 3) & 0b111;
+        let op2: usize = (opcode & 0b111) as usize;
+
         match operation {
-            0 => {
-                
-            }
-            1 => {
-                bit(cpu, )
-            }
-            2 => {
-
-            }
-            3 => {
-
-            }
+            0 => OPERATIONS[op1 as usize](cpu, register_operands[op2]),
+            1 => bit(cpu, register_operands[op2], op1),
+            2 => res(cpu, register_operands[op2], op1),
+            3 => set(cpu, register_operands[op2], op1),
             _ => unreachable!()
         }
     }

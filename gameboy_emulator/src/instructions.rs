@@ -71,11 +71,11 @@ pub fn add(cpu: &mut CPU, operand1: Operand8bit) {
 }
 
 pub fn add_hl(cpu: &mut CPU, operand2: Operand16bit) {
-    let value1: u16 = cpu.get_register_16bit(Registers16bit::HL);
-    let value2: u16 = operand2.get(cpu);
+    let value1: u32 = cpu.get_register_16bit(Registers16bit::HL) as u32;
+    let value2: u32 = operand2.get(cpu) as u32;
 
-    let sum: u16 = value1.wrapping_add(value2);
-    cpu.set_register_16bit(Registers16bit::HL, sum);
+    let sum: u32 = value1.wrapping_add(value2);
+    cpu.set_register_16bit(Registers16bit::HL, sum as u16);
 
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, (value1 & 0x7FF) + (value2 & 0x7FF) >= 0x800);
@@ -283,7 +283,7 @@ pub fn scf(cpu: &mut CPU) {
     cpu.set_flag(Flags::H, false);
 }
 
-pub fn nop() {
+pub fn nop(_: &mut CPU) {
     return;
 }
 
