@@ -27,13 +27,13 @@ pub fn ld_ha(cpu: &mut CPU, operand1: Operand8bit) {
 pub fn ldd_ahl(cpu: &mut CPU) {
     let value = cpu.get_8bit_memory_from_register(Registers16bit::HL);  
     cpu.set_register_8bit(Registers8bit::A, value);
-    dec16bit(cpu, Operand16bit::Register(Registers16bit::HL));
+    dec16(cpu, Operand16bit::Register(Registers16bit::HL));
 }
 
 pub fn ldd_hla(cpu : &mut CPU) {
     let value = cpu.get_register_8bit(Registers8bit::A);
     cpu.set_8bit_memory_from_register(value, Registers16bit::HL);
-    dec16bit(cpu, Operand16bit::Register(Registers16bit::HL));
+    dec16(cpu, Operand16bit::Register(Registers16bit::HL));
 }
 
 pub fn ld_16bit(cpu: &mut CPU, operand1: Operand16bit, operand2: Operand16bit) {
@@ -68,18 +68,6 @@ pub fn add(cpu: &mut CPU, operand1: Operand8bit) {
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, (value1 & 0x0F) + (value2 & 0x0F) >= 0x10);
     cpu.set_flag(Flags::C, sum >= 0x100);
-}
-
-pub fn add_hl(cpu: &mut CPU, operand2: Operand16bit) {
-    let value1: u32 = cpu.get_register_16bit(Registers16bit::HL) as u32;
-    let value2: u32 = operand2.get(cpu) as u32;
-
-    let sum: u32 = value1.wrapping_add(value2);
-    cpu.set_register_16bit(Registers16bit::HL, sum as u16);
-
-    cpu.set_flag(Flags::N, false);
-    cpu.set_flag(Flags::H, (value1 & 0x7FF) + (value2 & 0x7FF) >= 0x800);
-    cpu.set_flag(Flags::C, sum >= 0x10000)
 }
 
 pub fn adc(cpu: &mut CPU, operand1: Operand8bit) {
@@ -193,7 +181,7 @@ pub fn addhl(cpu: &mut CPU, operand1: Operand16bit) {
     let value1 = cpu.get_register_16bit(Registers16bit::HL) as u32;
     let value2 = operand1.get(cpu) as u32;
 
-    let sum = value1 + value2;
+    let sum: u32 = value1.wrapping_add(value2);
     cpu.set_register_16bit(Registers16bit::HL, sum as u16);
 
     cpu.set_flag(Flags::N, false);
@@ -201,11 +189,11 @@ pub fn addhl(cpu: &mut CPU, operand1: Operand16bit) {
     cpu.set_flag(Flags::C, sum >= 0x10000);
 }
 
-pub fn addsp(cpu: &mut CPU, operand1: Operand16bit) {
+pub fn addsp(cpu: &mut CPU, operand1: Operand8bit) {
     let value1 = cpu.get_sp() as u32;
-    let value2 = operand1.get(cpu) as u32;
+    let value2 = operand1.get(cpu) as i32 as u32;
 
-    let sum = value1 + value2;
+    let sum: u32 = value1.wrapping_add(value2);
     cpu.set_sp(sum as u16);
 
     cpu.set_flag(Flags::N, false);
@@ -213,12 +201,12 @@ pub fn addsp(cpu: &mut CPU, operand1: Operand16bit) {
     cpu.set_flag(Flags::C, sum >= 0x10000);
 }
 
-pub fn inc16bit(cpu: &mut CPU, operand1: Operand16bit) {
+pub fn inc16(cpu: &mut CPU, operand1: Operand16bit) {
     let value = operand1.get(cpu).wrapping_add(1);
     operand1.set(cpu, value)
 }
 
-pub fn dec16bit(cpu: &mut CPU, operand1: Operand16bit) {
+pub fn dec16(cpu: &mut CPU, operand1: Operand16bit) {
     let value = operand1.get(cpu).wrapping_sub(1);
     operand1.set(cpu, value)
 }
