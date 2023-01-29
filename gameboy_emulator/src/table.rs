@@ -8,12 +8,12 @@ use crate::cpu::Registers16bit as Reg16;
 use crate::instructions::*;
 
 // MORE INSTRUCTIONS ON THE WAY...
-pub const INSTRUCTIONS: [Instruction; 44] = [
+pub const INSTRUCTIONS: [Instruction; 49] = [
     Implied     (    nop),
     Op16bit     (  inc16,   Mode16::Register(Reg16::BC)),
     Op16bit     (  addhl,   Mode16::Register(Reg16::BC)),
     Op16bit     (  dec16,   Mode16::Register(Reg16::BC)),
-    // Op8bit      (   stop,              Mode8::Immediate),
+    Op8bit      (   stop,              Mode8::Immediate),
     Op16bit     (  inc16,   Mode16::Register(Reg16::DE)),
     Op8bit      (     jr,              Mode8::Immediate),
     Op16bit     (  addhl,   Mode16::Register(Reg16::DE)),
@@ -28,7 +28,7 @@ pub const INSTRUCTIONS: [Instruction; 44] = [
     Op8bit      (    jrc,              Mode8::Immediate),
     Op16bit     (  addhl,   Mode16::Register(Reg16::SP)),
     Op16bit     (  dec16,   Mode16::Register(Reg16::SP)),
-    // Implied     (   halt),
+    Implied     (   halt),
     Implied     (  retnz),
     Op16bit     (   jpnz,             Mode16::Immediate),
     Op16bit     (     jp,             Mode16::Immediate),
@@ -46,7 +46,7 @@ pub const INSTRUCTIONS: [Instruction; 44] = [
     Op16bit     ( callnc,             Mode16::Immediate),
     Op16bit     (    rst,         Mode16::Fixed(0x0010)),
     Implied     (   retc),
-    // Implied     (   reti),
+    Implied     (   reti),
     Op16bit     (    jpc,             Mode16::Immediate),
     Op16bit     (  callc,             Mode16::Immediate),
     Op16bit     (    rst,         Mode16::Fixed(0x0018)),
@@ -54,8 +54,8 @@ pub const INSTRUCTIONS: [Instruction; 44] = [
     Op8bit      (  addsp,              Mode8::Immediate),
     Op16bit     (     jp,   Mode16::Register(Reg16::HL)),
     Op16bit     (    rst,         Mode16::Fixed(0x0028)),
-    // Implied     (     di),
+    Implied     (     di),
     Op16bit     (    rst,         Mode16::Fixed(0x0030)),
-    // Implied     (     ei),
+    Implied     (     ei),
     Op16bit     (    rst,         Mode16::Fixed(0x0038)),
 ];
