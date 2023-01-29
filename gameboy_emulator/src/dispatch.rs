@@ -71,6 +71,7 @@ pub enum AddressingMode8bit {
     Register(Registers8bit),
     Immediate,
     Address,
+    HLAdddress,
     Fixed(u8),
 }
 
@@ -93,6 +94,8 @@ impl AddressingMode8bit {
                 => Operand8bit::Address(cpu.fetch_next_16bits_pc()),
             AddressingMode8bit::Fixed(value)
                 => Operand8bit::Immediate(value),
+            AddressingMode8bit::HLAdddress 
+                => Operand8bit::Address(cpu.get_register_16bit(Registers16bit::HL))    
         }
     }
 }

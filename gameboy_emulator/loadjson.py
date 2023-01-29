@@ -15,7 +15,7 @@ def control(name, op1, op2):
       ops = [(16, "Immediate")]
     case "(HL)":
       mode = "Op16bit"
-      ops = [(16, f"Register(Reg16::HL)")]
+      ops = [(16, f"Register(Registers16bit::HL)")]
     case None:
       mode = "Implied"
       ops = []
@@ -45,11 +45,11 @@ def alu16(name, op1, op2):
   if op2 is None:
     opcode += "16"
     mode = "Op16bit"
-    ops = [(16, f"Register(Reg16::{op1})")]
+    ops = [(16, f"Register(Registers16bit::{op1})")]
   elif op1 == "HL":
     opcode += "hl"
     mode = "Op16bit"
-    ops = [(16, f"Register(Reg16::{op2})")]
+    ops = [(16, f"Register(Registers16bit::{op2})")]
   elif op1 == "SP":
     opcode += "sp"
     mode = "Op8bit"
@@ -83,18 +83,18 @@ def lsm16(name, op1, op2):
   match op2:
     case None:
       mode = "Op16bit"
-      ops = [(16, f"Register(Reg16::{op1})")]
+      ops = [(16, f"Register(Registers16bit::{op1})")]
     case "d16":
       mode = "Op16bit16bit"
       ops = [
-        (16, f"Register(Reg16::{op1})"),
+        (16, f"Register(Registers16bit::{op1})"),
         (16, f"Immediate"),
       ]
     case "HL":
       mode = "Op16bit16bit"
       ops = [
-        (16, f"Register(Reg16::{op1})"),
-        (16, f"Register(Reg16::{op2})"),
+        (16, f"Register(Registers16bit::{op1})"),
+        (16, f"Register(Registers16bit::{op2})"),
       ]
     case "SP+r8":
       mode = "Op8bit"
@@ -104,14 +104,33 @@ def lsm16(name, op1, op2):
       mode = "Op16bit16bit"
       ops = [
         (16, f"Address"),
-        (16, f"Register(Reg16::{op2})"),
+        (16, f"Register(Registers16bit::{op2})"),
       ]
 
   return mode, opcode, ops
 
 def alu8(name, op1, op2):
-  return "Implied", "NOP", []
-  print(f"{name} {op1},{op2}")
+  mode = "Op8bit"
+  opcode = name
+
+ # Alerta codigo ruim. Isso eh gambiarra !
+ # Para evitar Ifs, eu fiz isso :)
+  if(op1 == "A"):
+    op1 = op2
+
+  match op1:
+    case "HL":
+      ops = [
+        (8, f"HLAddress")
+      ]
+    case _:
+      ops = [
+        (8, f"Register(Register8bit::{op1})")
+      ]
+
+  return mode, opcode, ops
+
+    
 
 def lsm8(name, op1, op2):
   return "Implied", "NOP", []
