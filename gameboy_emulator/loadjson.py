@@ -40,6 +40,22 @@ def misc(name, op1, op2):
       ops = []
   return mode, opcode, ops
 
+def alu16(name, op1, op2):
+  opcode = name
+  if op2 is None:
+    opcode += "16"
+    mode = "Op16bit"
+    ops = [(16, f"Register(Reg16::{op1})")]
+  elif op1 == "HL":
+    opcode += "hl"
+    mode = "Op16bit"
+    ops = [(16, f"Register(Reg16::{op2})")]
+  elif op1 == "SP":
+    opcode += "sp"
+    mode = "Op8bit"
+    ops = [(8, f"Immediate")]
+  return mode, opcode, ops
+
 # Implied (FnImplied),
 # Op8bit (FnOp8bit, AddressingMode8bit),
 # Op8bit8bit (FnOp8bit8bit, AddressingMode8bit, AddressingMode8bit),
@@ -60,26 +76,38 @@ def misc(name, op1, op2):
 #     Fixed(u16),
 # }
 
-def alu16(name, op1, op2):
-  # print(f"{name} {op1},{op2}")
-  opcode = name
-  if op2 is None:
-    opcode += "16"
-    mode = "Op16bit"
-    ops = [(16, f"Register(Reg16::{op1})")]
-  elif op1 == "HL":
-    opcode += "hl"
-    mode = "Op16bit"
-    ops = [(16, f"Register(Reg16::{op2})")]
-  elif op1 == "SP":
-    opcode += "sp"
-    mode = "Op8bit"
-    ops = [(8, f"Immediate")]
-  return mode, opcode, ops
-
 def lsm16(name, op1, op2):
-  return "Implied", "NOP", []
   print(f"{name} {op1},{op2}")
+  mode, opcode, ops = "Implied", "NOP", []
+  opcode = name
+  match op2:
+    case None:
+      mode = "Op16bit"
+      ops = [(16, f"Register(Reg16::{op1})")]
+    case "d16":
+      mode = "Op16bit16bit"
+      ops = [
+        (16, f"Register(Reg16::{op1})"),
+        (16, f"Immediate"),
+      ]
+    case "HL":
+      mode = "Op16bit16bit"
+      ops = [
+        (16, f"Register(Reg16::{op1})"),
+        (16, f"Register(Reg16::{op2})"),
+      ]
+    case "SP+r8":
+      mode = "Op8bit"
+      opcode += "HL"
+      ops = [(8, "Immediate")]
+    case "SP":
+      mode = "Op16bit16bit"
+      ops = [
+        (16, f"Address"),
+        (16, f"Register(Reg16::{op2})"),
+      ]
+
+  return mode, opcode, ops
 
 def alu8(name, op1, op2):
   return "Implied", "NOP", []
@@ -100,13 +128,16 @@ def generate_instr(name, group, op1, op2):
   match group:
     case "control/br":
       mode, opcode, ops = control(name, op1, op2)
+      return
     case "control/misc":
       mode, opcode, ops = misc(name, op1, op2)
+      return
     case "x16/alu":
       mode, opcode, ops = alu16(name, op1, op2)
+      return
     case "x16/lsm":
       mode, opcode, ops = lsm16(name, op1, op2)
-      return
+      # return
     case "x8/alu":
       mode, opcode, ops = alu8(name, op1, op2)
       return
@@ -116,7 +147,6 @@ def generate_instr(name, group, op1, op2):
     case "x8/rsb":
       mode, opcode, ops = rsb8(name, op1, op2)
       return
-    case _: raise ValueError()
 
   params = ','.join(
     [f"{opcode.lower():>7}"] + 
