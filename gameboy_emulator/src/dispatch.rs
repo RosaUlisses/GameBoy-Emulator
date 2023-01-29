@@ -1,7 +1,9 @@
 use crate::cpu::CPU;
 use crate::cpu::Registers16bit;
 use crate::cpu::Registers8bit;
-use crate::instructions::*;
+use crate::instructions;
+
+use crate::table::INSTRUCTIONS;
 
 #[derive(Clone, Copy)]
 pub enum Operand8bit {
@@ -123,12 +125,8 @@ pub enum Instruction {
     Op8bit8bit(FnOp8bit8bit, AddressingMode8bit, AddressingMode8bit),
     Op16bit(FnOp16bit, AddressingMode16bit),
     Op16bit16bit(FnOp16bit16bit, AddressingMode16bit, AddressingMode16bit),
-    PrefixExtended,
+    Prefix,
 }
-
-const INSTRUCTIONS: [Instruction; 256] = [
-    Instruction::Implied(nop); 256
-];
 
 impl Instruction {
     pub fn execute(self, cpu: &mut CPU) {
@@ -154,7 +152,7 @@ impl Instruction {
                 let op2 = operand2.fetch_operand(cpu);
                 instruction(cpu, op1, op2);
             }
-            Instruction::PrefixExtended => {
+            Instruction::Prefix => {
                 let opcode = cpu.fetch_next_8bits_pc();
                 Instruction::exec_extended(cpu, opcode);
             }
@@ -173,7 +171,14 @@ impl Instruction {
             Operand8bit::Register(Registers8bit::A),
         ];
         const OPERATIONS : [FnOp8bit; 8] = [
-            rlc, rrc, rl, rr, sla, sra, swap, srl
+            instructions::rlc,
+            instructions::rrc,
+            instructions::rl,
+            instructions::rr,
+            instructions::sla,
+            instructions::sra,
+            instructions::swap,
+            instructions::srl
         ];
 
         let operation = opcode >> 6;
@@ -182,9 +187,9 @@ impl Instruction {
 
         match operation {
             0 => OPERATIONS[op1 as usize](cpu, register_operands[op2]),
-            1 => bit(cpu, register_operands[op2], op1),
-            2 => res(cpu, register_operands[op2], op1),
-            3 => set(cpu, register_operands[op2], op1),
+            1 => instructions::bit(cpu, register_operands[op2], op1),
+            2 => instructions::res(cpu, register_operands[op2], op1),
+            3 => instructions::set(cpu, register_operands[op2], op1),
             _ => unreachable!()
         }
     }
