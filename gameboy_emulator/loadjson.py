@@ -80,6 +80,7 @@ def lsm16(name, op1, op2):
   print(f"{name} {op1},{op2}")
   mode, opcode, ops = "Implied", "NOP", []
   opcode = name
+
   match op2:
     case None:
       mode = "Op16bit"
@@ -112,6 +113,12 @@ def lsm16(name, op1, op2):
 def alu8(name, op1, op2):
   mode = "Op8bit"
   opcode = name
+  ops = []
+
+  if(op1 == None and op2 == None):
+    mode = "Implied"
+    return mode, opcode, ops
+
 
  # Alerta codigo ruim. Isso eh gambiarra !
  # Para evitar Ifs, eu fiz isso :)
@@ -133,8 +140,11 @@ def alu8(name, op1, op2):
     
 
 def lsm8(name, op1, op2):
-  return "Implied", "NOP", []
   print(f"{name} {op1},{op2}")
+  ops = []
+  match op1:
+    case "(a8)":
+      ops.append((8, "")) 
 
 def rsb8(name, op1, op2):
   return "Implied", "NOP", []
