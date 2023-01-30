@@ -15,7 +15,7 @@ def control(name, op1, op2):
       ops = [(16, "Immediate")]
     case "(HL)":
       mode = "Op16bit"
-      ops = [(16, f"Register(Registers16bit::HL)")]
+      ops = [(16, f"Register(Reg16::HL)")]
     case None:
       mode = "Implied"
       ops = []
@@ -45,15 +45,50 @@ def alu16(name, op1, op2):
   if op2 is None:
     opcode += "16"
     mode = "Op16bit"
-    ops = [(16, f"Register(Registers16bit::{op1})")]
+    ops = [(16, f"Register(Reg16::{op1})")]
   elif op1 == "HL":
     opcode += "hl"
     mode = "Op16bit"
-    ops = [(16, f"Register(Registers16bit::{op2})")]
+    ops = [(16, f"Register(Reg16::{op2})")]
   elif op1 == "SP":
     opcode += "sp"
     mode = "Op8bit"
     ops = [(8, f"Immediate")]
+  return mode, opcode, ops
+
+def lsm16(name, op1, op2):
+  mode, opcode, ops = "Implied", "NOP", []
+  opcode = name
+
+  match op2:
+    case None:
+      mode = "Op16bit"
+      ops = [(16, f"Register(Reg16::{op1})")]
+    case "d16":
+      mode = "Op16bit16bit"
+      opcode += "16"
+      ops = [
+        (16, f"Register(Reg16::{op1})"),
+        (16, f"Immediate"),
+      ]
+    case "HL":
+      mode = "Op16bit16bit"
+      opcode += "16"
+      ops = [
+        (16, f"Register(Reg16::{op1})"),
+        (16, f"Register(Reg16::{op2})"),
+      ]
+    case "SP+r8":
+      mode = "Op8bit"
+      opcode += "HL"
+      ops = [(8, "Immediate")]
+    case "SP":
+      mode = "Op16bit16bit"
+      opcode += "16"
+      ops = [
+        (16, f"Address"),
+        (16, f"Register(Reg16::{op2})"),
+      ]
   return mode, opcode, ops
 
 # Implied (FnImplied),
@@ -64,76 +99,35 @@ def alu16(name, op1, op2):
 # PrefixExtended,
 
 # pub enum AddressingMode8bit {
-#     Register(Registers8bit),
+#     Register(Reg8),
 #     Immediate,
 #     Address,
 #     Fixed(u8),
 # }
 # pub enum AddressingMode16bit {
-#     Register(Registers16bit),
+#     Register(Reg16),
 #     Immediate,
 #     Address,
 #     Fixed(u16),
 # }
 
-def lsm16(name, op1, op2):
-  print(f"{name} {op1},{op2}")
-  mode, opcode, ops = "Implied", "NOP", []
-  opcode = name
-
-  match op2:
-    case None:
-      mode = "Op16bit"
-      ops = [(16, f"Register(Registers16bit::{op1})")]
-    case "d16":
-      mode = "Op16bit16bit"
-      ops = [
-        (16, f"Register(Registers16bit::{op1})"),
-        (16, f"Immediate"),
-      ]
-    case "HL":
-      mode = "Op16bit16bit"
-      ops = [
-        (16, f"Register(Registers16bit::{op1})"),
-        (16, f"Register(Registers16bit::{op2})"),
-      ]
-    case "SP+r8":
-      mode = "Op8bit"
-      opcode += "HL"
-      ops = [(8, "Immediate")]
-    case "SP":
-      mode = "Op16bit16bit"
-      ops = [
-        (16, f"Address"),
-        (16, f"Register(Registers16bit::{op2})"),
-      ]
-
-  return mode, opcode, ops
-
 def alu8(name, op1, op2):
   mode = "Op8bit"
   opcode = name
-  ops = []
 
-  if(op1 == None and op2 == None):
-    mode = "Implied"
-    return mode, opcode, ops
-
-
- # Alerta codigo ruim. Isso eh gambiarra !
- # Para evitar Ifs, eu fiz isso :)
-  if(op1 == "A"):
+  if(op1 == "A" and op2 is not None):
     op1 = op2
 
   match op1:
-    case "HL":
-      ops = [
-        (8, f"HLAddress")
-      ]
-    case _:
-      ops = [
-        (8, f"Register(Register8bit::{op1})")
-      ]
+    case "(HL)":
+      ops = [(8, "Indirect(Reg16::HL)")]
+    case None:
+      mode = "Implied"
+      ops = []
+    case "d8":
+      ops = [(8, "Immediate")]
+    case reg:
+      ops = [(8, f"Register(Reg8::{reg})")]
 
   return mode, opcode, ops
 
@@ -141,6 +135,7 @@ def alu8(name, op1, op2):
 
 def lsm8(name, op1, op2):
   print(f"{name} {op1},{op2}")
+  return "Implied", "NOP", []
   ops = []
   match op1:
     case "(a8)":
@@ -166,7 +161,7 @@ def generate_instr(name, group, op1, op2):
       return
     case "x16/lsm":
       mode, opcode, ops = lsm16(name, op1, op2)
-      # return
+      return
     case "x8/alu":
       mode, opcode, ops = alu8(name, op1, op2)
       return
@@ -181,7 +176,10 @@ def generate_instr(name, group, op1, op2):
     [f"{opcode.lower():>7}"] + 
     [f"{generate_operand(s, t):>30}" for s, t in ops]
   )
-  print(f"    {mode:12}({params}),")
+  if opcode == "":
+    print(f"    {mode:12},")
+  else:
+    print(f"    {mode:12}({params}),")
 
 def main(argc, argv):
   with open("src/opcodes.json", "r") as file:
