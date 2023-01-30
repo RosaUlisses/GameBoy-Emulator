@@ -1,5 +1,3 @@
-use std::result;
-
 use crate::cpu::CPU;
 use crate::cpu::Flags;
 use crate::cpu::Registers16bit;
@@ -50,25 +48,25 @@ pub fn ld_ahl(cpu: &mut CPU) {
 
 pub fn ldi_ahl(cpu: &mut CPU) {
     ld_ahl(cpu);
-    inc_16bit(cpu, Operand16bit::Register(Registers16bit::HL));
+    inc16(cpu, Operand16bit::Register(Registers16bit::HL));
 }
 
 pub fn ldi_hla(cpu: &mut CPU) {
     ld_hla(cpu);
-    inc_16bit(cpu, Operand16bit::Register(Registers16bit::HL));
+    inc16(cpu, Operand16bit::Register(Registers16bit::HL));
 }
 
 pub fn ldd_ahl(cpu: &mut CPU) {
     ld_ahl(cpu);
-    dec_16bit(cpu, Operand16bit::Register(Registers16bit::HL));
+    dec16(cpu, Operand16bit::Register(Registers16bit::HL));
 }
 
 pub fn ldd_hla(cpu : &mut CPU) {
     ld_hla(cpu);
-    dec_16bit(cpu, Operand16bit::Register(Registers16bit::HL));
+    dec16(cpu, Operand16bit::Register(Registers16bit::HL));
 }
 
-pub fn ld_16bit(cpu: &mut CPU, operand1: Operand16bit, operand2: Operand16bit) {
+pub fn ld16(cpu: &mut CPU, operand1: Operand16bit, operand2: Operand16bit) {
     let value = operand2.get(cpu);
     operand1.set(cpu, value);
 }
@@ -239,12 +237,12 @@ pub fn addsp(cpu: &mut CPU, operand1: Operand8bit) {
     cpu.set_flag(Flags::C, overflow);
 }
 
-pub fn inc_16bit(cpu: &mut CPU, operand1: Operand16bit) {
+pub fn inc16(cpu: &mut CPU, operand1: Operand16bit) {
     let value = operand1.get(cpu).wrapping_add(1);
     operand1.set(cpu, value)
 }
 
-pub fn dec_16bit(cpu: &mut CPU, operand1: Operand16bit) {
+pub fn dec16(cpu: &mut CPU, operand1: Operand16bit) {
     let value = operand1.get(cpu).wrapping_sub(1);
     operand1.set(cpu, value)
 }
@@ -554,7 +552,7 @@ pub fn stop(cpu: &mut CPU, _: Operand8bit) {
     todo!("Stop instruction");
 }
 
-pub fn halt(_: &mut CPU) {
+pub fn halt(cpu: &mut CPU) {
     todo!("Halt instruction");
 }
 

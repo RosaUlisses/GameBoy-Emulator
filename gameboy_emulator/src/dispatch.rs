@@ -69,17 +69,18 @@ impl Operand16bit {
 #[derive(Clone, Copy)]
 pub enum AddressingMode8bit {
     Register(Registers8bit),
+    Indirect(Registers16bit),
+    IndexedC,
+    IndexedImm,
     Immediate,
-    Address8bitImmediate,
-    Address16bitImmediate,
-    CAddress,
-    HLAdddress,
+    Address,
     Fixed(u8),
 }
 
 #[derive(Clone, Copy)]
 pub enum AddressingMode16bit {
     Register(Registers16bit),
+    Indirect(Registers16bit),
     Immediate,
     Address,
     Fixed(u16),
@@ -90,16 +91,20 @@ impl AddressingMode8bit {
         match self {
             AddressingMode8bit::Register(register)
                 => Operand8bit::Register(register),
+            AddressingMode8bit::Indirect(register)
+                => Operand8bit::Address(cpu.get_register_16bit(register)),
+            AddressingMode8bit::IndexedC
+                => Operand8bit::Address(
+                    cpu.get_register_8bit(Registers8bit::C) as u16 + 0xFF00
+                ),
+            AddressingMode8bit::IndexedImm
+                => Operand8bit::Address(
+                    cpu.fetch_next_8bits_pc() as u16 + 0xFF00
+                ),
             AddressingMode8bit::Immediate
                 => Operand8bit::Immediate(cpu.fetch_next_8bits_pc()),
-            AddressingMode8bit::Address8bitImmediate
-                => Operand8bit::Address(cpu.fetch_next_8bits_pc() as u16),
-            AddressingMode8bit::Address16bitImmediate
-                => Operand8bit::Address(cpu.fetch_next_16bits_pc()),
-            AddressingMode8bit::CAddress
-                => Operand8bit::Address(cpu.get_register_8bit(Registers8bit::C) as u16),
-            AddressingMode8bit::HLAdddress 
-                => Operand8bit::Address(cpu.get_register_16bit(Registers16bit::HL)),    
+            AddressingMode8bit::Address
+                => Operand8bit::Address(cpu.fetch_next_16bits_pc()),    
             AddressingMode8bit::Fixed(value)
                 => Operand8bit::Immediate(value),
         }
@@ -111,6 +116,8 @@ impl AddressingMode16bit {
         match self {
             AddressingMode16bit::Register(register)
                 => Operand16bit::Register(register),
+            AddressingMode16bit::Indirect(register)
+                => Operand16bit::Address(cpu.get_register_16bit(register)),
             AddressingMode16bit::Immediate
                 => Operand16bit::Immediate(cpu.fetch_next_16bits_pc()),
             AddressingMode16bit::Address
