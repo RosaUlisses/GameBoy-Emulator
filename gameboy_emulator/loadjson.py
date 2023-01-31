@@ -48,11 +48,11 @@ def alu16(name, op1, op2):
   if op2 is None:
     opcode += "16"
     mode = "Op16bit"
-    ops = [(16, f"Register(Reg16::{op1})")]
+    ops = [(16, register16(op1))]
   elif op1 == "HL":
     opcode += "hl"
     mode = "Op16bit"
-    ops = [(16, f"Register(Reg16::{op2})")]
+    ops = [(16, register16(op2))]
   elif op1 == "SP":
     opcode += "sp"
     mode = "Op8bit"
@@ -67,20 +67,20 @@ def lsm16(name, op1, op2):
   match op2:
     case None:
       mode = "Op16bit"
-      ops = [(16, f"Register(Reg16::{op1})")]
+      ops = [(16, register16(op1))]
     case "d16":
       mode = "Op16bit16bit"
       opcode += "16"
       ops = [
-        (16, f"Register(Reg16::{op1})"),
+        (16, register16(op1)),
         (16, f"Immediate"),
       ]
     case "HL":
       mode = "Op16bit16bit"
       opcode += "16"
       ops = [
-        (16, f"Register(Reg16::{op1})"),
-        (16, f"Register(Reg16::{op2})"),
+        (16, register16(op1)),
+        (16, register16(op2)),
       ]
     case "SP+r8":
       mode = "Op8bit"
@@ -91,7 +91,7 @@ def lsm16(name, op1, op2):
       opcode += "16"
       ops = [
         (16, f"Address"),
-        (16, f"Register(Reg16::{op2})"),
+        (16, register16(op2)),
       ]
   return mode, opcode, ops
 
@@ -158,6 +158,13 @@ def rsb8(name, op1, op2):
 
 def generate_operand(size, optype):
   return f"Mode{size}::{optype}"
+
+
+def register16(reg):
+  if reg == "SP":
+    return "StackPointer"
+  else:
+    return f"Register(Reg16::{reg})"
 
 
 def generate_instr(name, group, op1, op2):

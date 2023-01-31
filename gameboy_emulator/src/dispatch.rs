@@ -40,6 +40,7 @@ pub enum Operand16bit {
     Register(Registers16bit),
     Immediate(u16),
     Address(u16),
+    StackPointer,
 }
 
 impl Operand16bit {
@@ -51,16 +52,20 @@ impl Operand16bit {
                 => immediate,
             Operand16bit::Address(address)
                 => cpu.get_memory_16bit(address),
+            Operand16bit::StackPointer
+                => cpu.get_sp()
+            }
         }
-    }
     pub fn set(self, cpu: &mut CPU, value: u16) {
         match self {
             Operand16bit::Register(register)
-                => cpu.set_register_16bit(register, value),
+            => cpu.set_register_16bit(register, value),
             Operand16bit::Immediate(_)
-                => panic!("operand.set() on an immediate value"),
+            => panic!("operand.set() on an immediate value"),
             Operand16bit::Address(address)
-                => cpu.set_memory_16bit(address, value),
+            => cpu.set_memory_16bit(address, value),
+            Operand16bit::StackPointer
+                => cpu.set_sp(value),
         }
     }
 }
@@ -82,6 +87,7 @@ pub enum AddressingMode16bit {
     Indirect(Registers16bit),
     Immediate,
     Address,
+    StackPointer,
     Fixed(u16),
 }
 
@@ -121,6 +127,8 @@ impl AddressingMode16bit {
                 => Operand16bit::Immediate(cpu.fetch_next_16bits_pc()),
             AddressingMode16bit::Address
                 => Operand16bit::Address(cpu.fetch_next_16bits_pc()),
+            AddressingMode16bit::StackPointer
+                => Operand16bit::StackPointer,
             AddressingMode16bit::Fixed(value)
                 => Operand16bit::Immediate(value),
         }
