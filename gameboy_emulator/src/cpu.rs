@@ -1,4 +1,5 @@
 use crate::bitwise;
+use crate::table::INSTRUCTIONS;
 
 const REGISTER_COUNT: usize = 8;
 const MEMORY_SIZE: usize = 65536; 
@@ -37,7 +38,7 @@ pub struct CPU {
     pub stack_pointer: u16,
     pub program_counter: u16,
     pub memory: [u8; MEMORY_SIZE],
-    pub IME_flag: bool,
+    pub ime_flag: bool,
 }
 
 impl CPU {
@@ -47,11 +48,16 @@ impl CPU {
             stack_pointer: 0,
             program_counter: 0,
             memory: [0; MEMORY_SIZE],
-            IME_flag: false
+            ime_flag: false
         };
     }
 
-    pub fn get_memory_8bit(&self, address: u16) -> u8{
+    pub fn execute_instruction(&mut self) {
+        let opcode = self.fetch_next_8bits_pc();
+        INSTRUCTIONS[opcode as usize].execute(self);
+    }
+
+    pub fn get_memory_8bit(&self, address: u16) -> u8 {
         return self.memory[address as usize]; 
     }
 
@@ -202,12 +208,12 @@ impl CPU {
         self.program_counter = value;
     }
 
-    pub fn set_IME_flag(&mut self) {
-        self.IME_flag = true;
+    pub fn set_ime_flag(&mut self) {
+        self.ime_flag = true;
     }
 
-    pub fn reset_IME_flag(&mut self) {
-        self.IME_flag = false;
+    pub fn reset_ime_flag(&mut self) {
+        self.ime_flag = false;
     }
 
 }
