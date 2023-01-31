@@ -29,8 +29,6 @@ pub enum Registers16bit {
     BC = 1,
     DE = 2,
     HL = 3,
-    SP = 4,
-    PC = 5
 }
 
 pub struct CPU {
@@ -44,10 +42,10 @@ pub struct CPU {
 impl CPU {
     pub fn new() -> Self {
         return CPU {
-            registers: [0; 8],
-            stack_pointer: 0,
-            program_counter: 0,
-            memory: [0; MEMORY_SIZE],
+            registers: [0x00; 8],
+            stack_pointer: 0xFFFF,
+            program_counter: 0x0000,
+            memory: [0x00; MEMORY_SIZE],
             ime_flag: false
         };
     }
@@ -182,8 +180,8 @@ impl CPU {
     pub fn get_register_16bit(&self, register: Registers16bit) -> u16 {
         let index: usize = register as usize * 2;
         return bitwise::get_16b_from_hl(
-            self.registers[index],
-            self.registers[index + 1]);
+            self.registers[index + 1],
+            self.registers[index]);
     }
 
     pub fn set_register_16bit(&mut self, register: Registers16bit, value: u16) {

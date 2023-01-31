@@ -356,7 +356,7 @@ pub fn bit(cpu: &mut CPU, operand1: Operand8bit, operand2: Operand8bit) {
     let bit = operand1.get(cpu);
     let bit = bitwise::get_bit_8b(operand2.get(cpu), bit);
 
-    cpu.set_flag(Flags::Z, bit);
+    cpu.set_flag(Flags::Z, !bit);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, true);
 }
