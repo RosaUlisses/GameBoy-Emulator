@@ -12,57 +12,13 @@ pub fn ld(cpu: &mut CPU, operand1: Operand8bit, operand2: Operand8bit) {
     operand1.set(cpu, value);
 }
 
-pub fn ld_ah(cpu: &mut CPU, operand1: Operand8bit) {
-    let address: u16 = 0xFF00 + (operand1.get(cpu) as u16);
-    let value = cpu.get_memory_8bit(address);
-    cpu.set_register_8bit(Registers8bit::A, value);   
-}
-
-pub fn ld_ha(cpu: &mut CPU, operand1: Operand8bit) {
-    let address: u16 = 0xFF00 + (operand1.get(cpu) as u16);
-    let value = cpu.get_register_8bit(Registers8bit::A); 
-    cpu.set_memory_8bit(address, value);
-}
-
-pub fn ld_ac(cpu: &mut CPU) {
-    let address: u16 = 0xFF00 + (cpu.get_register_8bit(Registers8bit::C) as u16);
-    let value = cpu.get_memory_8bit(address);
-    cpu.set_register_8bit(Registers8bit::A, value);
-}
-
-pub fn ld_ca(cpu: &mut CPU) {
-    let address: u16 = 0xFF00 + (cpu.get_register_8bit(Registers8bit::C) as u16);
-    let value = cpu.get_register_8bit(Registers8bit::A);
-    cpu.set_memory_8bit(address, value);
-}
-
-pub fn ld_hla(cpu: &mut CPU) {
-    let value = cpu.get_register_8bit(Registers8bit::A);
-    cpu.set_8bit_memory_from_register(value, Registers16bit::HL);
-}
-
-pub fn ld_ahl(cpu: &mut CPU) {
-    let value = cpu.get_8bit_memory_from_register(Registers16bit::HL);  
-    cpu.set_register_8bit(Registers8bit::A, value);
-}
-
-pub fn ldi_ahl(cpu: &mut CPU) {
-    ld_ahl(cpu);
+pub fn ldi(cpu: &mut CPU, operand1: Operand8bit, operand2: Operand8bit) {
+    ld(cpu, operand1, operand2);
     inc16(cpu, Operand16bit::Register(Registers16bit::HL));
 }
 
-pub fn ldi_hla(cpu: &mut CPU) {
-    ld_hla(cpu);
-    inc16(cpu, Operand16bit::Register(Registers16bit::HL));
-}
-
-pub fn ldd_ahl(cpu: &mut CPU) {
-    ld_ahl(cpu);
-    dec16(cpu, Operand16bit::Register(Registers16bit::HL));
-}
-
-pub fn ldd_hla(cpu : &mut CPU) {
-    ld_hla(cpu);
+pub fn ldd(cpu: &mut CPU, operand1: Operand8bit, operand2: Operand8bit) {
+    ld(cpu, operand1, operand2);
     dec16(cpu, Operand16bit::Register(Registers16bit::HL));
 }
 
@@ -72,7 +28,7 @@ pub fn ld16(cpu: &mut CPU, operand1: Operand16bit, operand2: Operand16bit) {
 }
 
 pub fn ldhl(cpu : &mut CPU, operand1: Operand8bit) {
-    let value = operand1.get(cpu) as i16 as u16;
+    let value = operand1.get(cpu) as i8 as u16;
     let result = cpu.get_sp().wrapping_add(value);
 
     cpu.set_register_16bit(Registers16bit::HL, result);
@@ -227,7 +183,7 @@ pub fn addhl(cpu: &mut CPU, operand1: Operand16bit) {
 
 pub fn addsp(cpu: &mut CPU, operand1: Operand8bit) {
     let value1 = cpu.get_sp();
-    let value2 = operand1.get(cpu) as i16 as u16;
+    let value2 = operand1.get(cpu) as i8 as u16;
 
     let (sum, overflow) = value1.overflowing_add(value2);
     cpu.set_sp(sum);
@@ -396,22 +352,25 @@ pub fn srl(cpu: &mut CPU, operand1: Operand8bit) {
     cpu.set_flag(Flags::C, carry);
 }
 
-pub fn bit(cpu: &mut CPU, operand1: Operand8bit, bit: u8){
-    let bit = bitwise::get_bit_8b(operand1.get(cpu), bit);
+pub fn bit(cpu: &mut CPU, operand1: Operand8bit, operand2: Operand8bit) {
+    let bit = operand1.get(cpu);
+    let bit = bitwise::get_bit_8b(operand2.get(cpu), bit);
 
     cpu.set_flag(Flags::Z, bit);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, true);
 }
 
-pub fn set(cpu: &mut CPU, operand1: Operand8bit, bit: u8) {
-    let value = operand1.get(cpu);
-    operand1.set(cpu, bitwise::set_bit_8b(value, bit, true));
+pub fn set(cpu: &mut CPU, operand1: Operand8bit, operand2: Operand8bit) {
+    let bit = operand1.get(cpu);
+    let value = operand2.get(cpu);
+    operand2.set(cpu, bitwise::set_bit_8b(value, bit, true));
 }
 
-pub fn res(cpu: &mut CPU, operand1: Operand8bit, bit: u8) {
-    let value = operand1.get(cpu);
-    operand1.set(cpu, bitwise::set_bit_8b(value, bit, false));
+pub fn res(cpu: &mut CPU, operand1: Operand8bit, operand2: Operand8bit) {
+    let bit = operand1.get(cpu);
+    let value = operand2.get(cpu);
+    operand2.set(cpu, bitwise::set_bit_8b(value, bit, false));
 }
 
 pub fn jp(cpu: &mut CPU, operand1: Operand16bit) {
@@ -447,7 +406,7 @@ pub fn jphl(cpu: &mut CPU) {
 }
 
 pub fn jr(cpu: &mut CPU, operand1: Operand8bit) {
-    let value = operand1.get(cpu) as i16 as u16;
+    let value = operand1.get(cpu) as i8 as u16;
     let result = cpu.get_pc().wrapping_add(value);
     cpu.set_pc(result);
 }
@@ -536,11 +495,11 @@ pub fn rst(cpu: &mut CPU, operand1: Operand16bit) {
     call(cpu, operand1);
 }
 
-pub fn ei(cpu: &mut CPU) {
+pub fn ei(_cpu: &mut CPU) {
     todo!("Implement Enable interrupt")
 }
 
-pub fn di(cpu: &mut CPU) {
+pub fn di(_cpu: &mut CPU) {
     todo!("Implement Disable interrupt")
 }
 
@@ -548,11 +507,11 @@ pub fn nop(_: &mut CPU) {
     return;
 }
 
-pub fn stop(cpu: &mut CPU, _: Operand8bit) {
+pub fn stop(_cpu: &mut CPU, _: Operand8bit) {
     todo!("Stop instruction");
 }
 
-pub fn halt(cpu: &mut CPU) {
+pub fn halt(_cpu: &mut CPU) {
     todo!("Halt instruction");
 }
 
