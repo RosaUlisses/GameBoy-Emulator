@@ -57,10 +57,6 @@ impl CPU {
         }
     }
 
-    pub fn init_PC(&mut self) {
-        self.program_counter = 0x100;
-    }
-
     pub fn execute_instruction(&mut self) {
         let opcode = self.fetch_next_8bits_pc();
         INSTRUCTIONS[opcode as usize].execute(self);

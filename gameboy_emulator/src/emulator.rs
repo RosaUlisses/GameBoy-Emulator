@@ -16,6 +16,5 @@ impl Emulator {
     pub fn init(&mut self, rom_path: String) {
         let rom_bytes = fs::read(rom_path).expect("ERROR, IT IS NOT POSSIBLE TO READ THE ROM"); 
         self.cpu.load_ROM(&rom_bytes);
-        self.cpu.init_PC();
     }
 }
