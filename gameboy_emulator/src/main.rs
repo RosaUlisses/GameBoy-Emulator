@@ -8,13 +8,14 @@ pub mod table;
 
 use std::path::Path;
 
-const PATH: &str = "tests/cpu_instrs/individual/01-special.gb";
+const PATH: &str = "tests/cpu_instrs/individual/06-ld r,r.gb";
 
 fn main() {
     let rom_path = String::from(PATH);
     let mut emulator = Emulator::new();
     emulator.init(Path::new(&rom_path));
-    emulator.start();
+    emulator.init_gameboy_doctor();
+    emulator.start_game_boy_doctor();
 }
 
 /* 

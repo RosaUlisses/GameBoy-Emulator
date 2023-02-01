@@ -11,3 +11,4 @@ Cargo.lock
 
 # Custom files
 # /gameboy_emulator/tests/
+/gameboy_emulator/logs.txt
