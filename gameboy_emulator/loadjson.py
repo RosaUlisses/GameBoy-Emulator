@@ -149,9 +149,9 @@ def lsm8(name, op1, op2):
   return mode, opcode, ops
 
 def rsb8(name, op1, op2):
-  opcode = name[:-1]
-  mode = "Op8bit"
-  ops = [(8, "Register(Reg8::A)")]
+  opcode = name
+  mode = "Implied"
+  ops = []
 
   return mode, opcode, ops
 
@@ -258,26 +258,4 @@ def main(argc, argv):
 
   return 0
 
-
 sys.exit(main(len(sys.argv), sys.argv))
-
-
-# Implied (FnImplied),
-# Op8bit (FnOp8bit, AddressingMode8bit),
-# Op8bit8bit (FnOp8bit8bit, AddressingMode8bit, AddressingMode8bit),
-# Op16bit (FnOp16bit, AddressingMode16bit),
-# Op16bit16bit (FnOp16bit16bit, AddressingMode16bit, AddressingMode16bit),
-# PrefixExtended,
-
-# pub enum AddressingMode8bit {
-#     Register(Reg8),
-#     Immediate,
-#     Address,
-#     Fixed(u8),
-# }
-# pub enum AddressingMode16bit {
-#     Register(Reg16),
-#     Immediate,
-#     Address,
-#     Fixed(u16),
-# }

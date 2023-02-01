@@ -165,7 +165,7 @@ pub fn dec(cpu: &mut CPU, operand1: Operand8bit) {
 
  cpu.set_flag(Flags::Z, decremented == 0);
  cpu.set_flag(Flags::N, true);
- cpu.set_flag(Flags::H, (decremented & 0x0F) != 0xF);
+ cpu.set_flag(Flags::H, (decremented & 0x0F) == 0xF);
 }
 
 pub fn addhl(cpu: &mut CPU, operand1: Operand16bit) {
@@ -262,7 +262,56 @@ pub fn scf(cpu: &mut CPU) {
     cpu.set_flag(Flags::H, false);
 }
 
+pub fn rlca(cpu: &mut CPU) {
+    let value = cpu.get_register_8bit(Registers8bit::A);
+    let result = value.rotate_left(1); 
+    
+    cpu.set_register_8bit(Registers8bit::A, result);
 
+    cpu.set_flag(Flags::Z, false);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, (result & 1) != 0);
+}
+
+pub fn rla(cpu: &mut CPU) {
+    let value = cpu.get_register_8bit(Registers8bit::A);
+    let (tmp, carry) = value.overflowing_shl(1); 
+    let result = tmp | (cpu.get_flag(Flags::C) as u8);
+
+    cpu.set_register_8bit(Registers8bit::A, result);
+
+    cpu.set_flag(Flags::Z, false);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, carry);
+}
+
+pub fn rrca(cpu: &mut CPU) {
+    let value = cpu.get_register_8bit(Registers8bit::A);
+    let result = value.rotate_right(1); 
+    
+    cpu.set_register_8bit(Registers8bit::A, result);
+
+    cpu.set_flag(Flags::Z, false);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, (value & 1) != 0);
+}
+
+pub fn rra(cpu: &mut CPU) {
+    let value = cpu.get_register_8bit(Registers8bit::A);
+    let tmp = value.wrapping_shr(1);
+    let carry = value & 1 != 0; 
+    let result = tmp | ((cpu.get_flag(Flags::C) as u8) << 7);
+
+    cpu.set_register_8bit(Registers8bit::A, result);
+
+    cpu.set_flag(Flags::Z, false);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, false);
+    cpu.set_flag(Flags::C, carry);
+}
 
 pub fn rlc(cpu: &mut CPU, operand1: Operand8bit) {
     let value = operand1.get(cpu);
@@ -270,7 +319,7 @@ pub fn rlc(cpu: &mut CPU, operand1: Operand8bit) {
     
     operand1.set(cpu, result);
 
-    cpu.set_flag(Flags::Z, result == 0);
+    cpu.set_flag(Flags::Z, false);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
     cpu.set_flag(Flags::C, (result & 1) != 0);
@@ -283,7 +332,7 @@ pub fn rl(cpu: &mut CPU, operand1: Operand8bit) {
 
     operand1.set(cpu, result);
 
-    cpu.set_flag(Flags::Z, result == 0);
+    cpu.set_flag(Flags::Z, false);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
     cpu.set_flag(Flags::C, carry);
@@ -303,7 +352,8 @@ pub fn rrc(cpu: &mut CPU, operand1: Operand8bit) {
 
 pub fn rr(cpu: &mut CPU, operand1: Operand8bit) {
     let value = operand1.get(cpu);
-    let (tmp, carry) = value.overflowing_shr(1); 
+    let tmp = value.wrapping_shr(1);
+    let carry = value & 1 != 0; 
     let result = tmp | ((cpu.get_flag(Flags::C) as u8) << 7);
 
     operand1.set(cpu, result);
@@ -328,7 +378,7 @@ pub fn sla(cpu: &mut CPU, operand1: Operand8bit) {
 
 pub fn sra(cpu: &mut CPU, operand1: Operand8bit) {
     let value = operand1.get(cpu);
-    let (tmp, carry) = value.overflowing_shr(1); 
+    let tmp = value.wrapping_shr(1); 
     let result = tmp | (value & 0x80);
 
     operand1.set(cpu, result);
@@ -336,19 +386,19 @@ pub fn sra(cpu: &mut CPU, operand1: Operand8bit) {
     cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, carry);
+    cpu.set_flag(Flags::C, value & 1 != 0);
 }
 
 pub fn srl(cpu: &mut CPU, operand1: Operand8bit) {
     let value = operand1.get(cpu);
-    let (result, carry) = value.overflowing_shr(1); 
+    let result = value.wrapping_shr(1); 
 
     operand1.set(cpu, result);
 
     cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, carry);
+    cpu.set_flag(Flags::C, value & 1 != 0);
 }
 
 pub fn bit(cpu: &mut CPU, operand1: Operand8bit, operand2: Operand8bit) {
