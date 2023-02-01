@@ -494,12 +494,14 @@ pub fn rst(cpu: &mut CPU, operand1: Operand16bit) {
     call(cpu, operand1);
 }
 
-pub fn ei(_cpu: &mut CPU) {
-    todo!("Implement Enable interrupt")
+pub fn ei(cpu: &mut CPU) {
+    cpu.set_ime_flag(); 
+    println!("Interrupts enabled!");
 }
 
-pub fn di(_cpu: &mut CPU) {
-    todo!("Implement Disable interrupt")
+pub fn di(cpu: &mut CPU) {
+    cpu.reset_ime_flag();
+    println!("Interrupts disabled!");
 }
 
 pub fn nop(_: &mut CPU) {
@@ -507,7 +509,8 @@ pub fn nop(_: &mut CPU) {
 }
 
 pub fn stop(_cpu: &mut CPU, _: Operand8bit) {
-    todo!("Stop instruction");
+    print!("Stop intruction");
+    //todo!("Stop instruction");
 }
 
 pub fn halt(_cpu: &mut CPU) {

@@ -51,7 +51,7 @@ impl CPU {
         };
     }
 
-    pub fn load_ROM(&mut self, rom_bytes: &Vec<u8>) {
+    pub fn load_rom(&mut self, rom_bytes: &Vec<u8>) {
         for i in 0..(rom_bytes.len()) {
             self.memory[i] = rom_bytes[i];
         }
