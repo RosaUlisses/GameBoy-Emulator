@@ -10,4 +10,4 @@ Cargo.lock
 **/*.rs.bk
 
 # Custom files
-/gameboy_emulator/tests/
+# /gameboy_emulator/tests/
