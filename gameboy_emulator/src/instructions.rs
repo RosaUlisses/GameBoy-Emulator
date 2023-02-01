@@ -2,7 +2,6 @@ use crate::cpu::CPU;
 use crate::cpu::Flags;
 use crate::cpu::Registers16bit;
 use crate::cpu::Registers8bit;
-
 use crate::bitwise;
 use crate::dispatch::Operand8bit;
 use crate::dispatch::Operand16bit;

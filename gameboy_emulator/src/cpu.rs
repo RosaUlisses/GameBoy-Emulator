@@ -1,5 +1,6 @@
 use crate::bitwise;
 use crate::table::INSTRUCTIONS;
+use std::vec::Vec;
 
 const REGISTER_COUNT: usize = 8;
 const MEMORY_SIZE: usize = 65536; 
@@ -48,6 +49,16 @@ impl CPU {
             memory: [0x00; MEMORY_SIZE],
             ime_flag: false
         };
+    }
+
+    pub fn load_ROM(&mut self, rom_bytes: &Vec<u8>) {
+        for i in 0..(rom_bytes.len()) {
+            self.memory[i] = rom_bytes[i];
+        }
+    }
+
+    pub fn init_PC(&mut self) {
+        self.program_counter = 0x100;
     }
 
     pub fn execute_instruction(&mut self) {
