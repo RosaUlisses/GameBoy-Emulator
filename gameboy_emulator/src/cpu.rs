@@ -5,6 +5,7 @@ use std::vec::Vec;
 const REGISTER_COUNT: usize = 8;
 const MEMORY_SIZE: usize = 65536; 
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Flags {
     Z = 7,
     N = 6,
@@ -12,7 +13,7 @@ pub enum Flags {
     C = 4
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Registers8bit {
     A = 0, 
     F = 1,
@@ -24,7 +25,7 @@ pub enum Registers8bit {
     L = 7
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Registers16bit {
     AF = 0, 
     BC = 1,
@@ -126,23 +127,25 @@ impl CPU {
     }
 
     pub fn push_8bit_sp(&mut self, value: u8) {
-        self.set_8bit_memory_from_sp(value);
         self.stack_pointer = self.stack_pointer.wrapping_sub(1);
+        self.set_8bit_memory_from_sp(value);
     }
 
     pub fn pop_8bit_sp(&mut self) -> u8 {
+        let value = self.get_8bit_memory_from_sp();
         self.stack_pointer = self.stack_pointer.wrapping_add(1);
-        return self.get_8bit_memory_from_sp();
+        return value;
     }
 
     pub fn push_16bit_sp(&mut self, value: u16) {
-        self.set_16bit_memory_from_sp(value);
         self.stack_pointer = self.stack_pointer.wrapping_sub(2);
+        self.set_16bit_memory_from_sp(value);
     }
 
     pub fn pop_16bit_sp(&mut self) -> u16 {
+        let value = self.get_16bit_memory_from_sp();
         self.stack_pointer = self.stack_pointer.wrapping_add(2);
-        return self.get_16bit_memory_from_sp();
+        return value;
     }
     
     pub fn get_8bit_memory_from_register(&mut self, register: Registers16bit) -> u8 {
@@ -182,6 +185,9 @@ impl CPU {
 
     pub fn set_register_8bit(&mut self, register: Registers8bit, value: u8) {
         self.registers[register as usize] = value;
+        if register == Registers8bit::F {
+            self.registers[register as usize] &= 0xF0;
+        }
     }
 
     pub fn get_register_16bit(&self, register: Registers16bit) -> u16 {
@@ -192,9 +198,13 @@ impl CPU {
     }
 
     pub fn set_register_16bit(&mut self, register: Registers16bit, value: u16) {
-        let index: usize = register as usize * 2;
-        self.registers[index] = bitwise::get_high(value); 
+        let index = register as usize * 2;
+
+        self.registers[index] = bitwise::get_high(value);
         self.registers[index + 1] = bitwise::get_low(value);
+        if register == Registers16bit::AF {
+            self.registers[index + 1] &= 0xF0;
+        }
     }
 
     pub fn get_sp(&self) -> u16 {

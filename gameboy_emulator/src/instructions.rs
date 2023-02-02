@@ -27,8 +27,14 @@ pub fn ld16(cpu: &mut CPU, operand1: Operand16bit, operand2: Operand16bit) {
 }
 
 pub fn ldhl(cpu : &mut CPU, operand1: Operand8bit) {
-    let value = operand1.get(cpu) as i8 as u16;
-    let result = cpu.get_sp().wrapping_add(value);
+    let value1 = operand1.get(cpu) as i8 as u16;
+    let value2 = cpu.get_sp();
+    let result = value2.wrapping_add(value1);
+
+    cpu.set_flag(Flags::Z, false);
+    cpu.set_flag(Flags::N, false);
+    cpu.set_flag(Flags::H, (value1 & 0x0F) + (value2 & 0x0F) >= 0x10);
+    cpu.set_flag(Flags::C, (value1 & 0xFF) + (value2 & 0xFF) >= 0x100);
 
     cpu.set_register_16bit(Registers16bit::HL, result);
 }
@@ -90,16 +96,18 @@ pub fn sbc(cpu: &mut CPU, operand1: Operand8bit) {
     let value2 = operand1.get(cpu);
 
     let carry = cpu.get_flag(Flags::C) as u8; // 1 or 0
-
+    
+    let halfunderflow1 = (value1 & 0x0F) < (value2 & 0x0F);
     let (diff, underflow1) = value1.overflowing_sub(value2);
+    let halfunderflow2 = (diff & 0x0F) < carry;
     let (diff, underflow2) = diff.overflowing_sub(carry);
     cpu.set_register_8bit(Registers8bit::A, diff);
-
+    
     cpu.set_flag(Flags::Z, diff == 0);
     cpu.set_flag(Flags::N, true);
-    cpu.set_flag(Flags::H, (value1 & 0x0F) < (value2 & 0x0F));
+    cpu.set_flag(Flags::H, halfunderflow1 || halfunderflow2);
     cpu.set_flag(Flags::C, underflow1 || underflow2);
-    // cpu.set_flag(Flags::C, value1 < value2);
+
 }
 
 pub fn and(cpu: &mut CPU, operand1: Operand8bit) {
@@ -182,14 +190,15 @@ pub fn addhl(cpu: &mut CPU, operand1: Operand16bit) {
 
 pub fn addsp(cpu: &mut CPU, operand1: Operand8bit) {
     let value1 = cpu.get_sp();
-    let value2 = operand1.get(cpu) as i8 as u16;
+    let value2 = (operand1.get(cpu) as i8) as u16;
 
-    let (sum, overflow) = value1.overflowing_add(value2);
+    let sum = value1.wrapping_add(value2);
     cpu.set_sp(sum);
 
+    cpu.set_flag(Flags::Z, false);
     cpu.set_flag(Flags::N, false);
-    cpu.set_flag(Flags::H, (value1 & 0x0FFF) + (value2 & 0x0FFF) >= 0x1000);
-    cpu.set_flag(Flags::C, overflow);
+    cpu.set_flag(Flags::H, (value1 & 0x0F) + (value2 & 0x0F) >= 0x10);
+    cpu.set_flag(Flags::C, (value1 & 0xFF) + (value2 & 0xFF) >= 0x100);
 }
 
 pub fn inc16(cpu: &mut CPU, operand1: Operand16bit) {
@@ -214,7 +223,6 @@ pub fn swap(cpu: &mut CPU, operand1: Operand8bit) {
 }
 
 pub fn daa(cpu: &mut CPU) {
-
     let mut a_value = cpu.get_register_8bit(Registers8bit::A);
 
     if !cpu.get_flag(Flags::N) {
@@ -236,6 +244,7 @@ pub fn daa(cpu: &mut CPU) {
         }
     }
 
+    cpu.set_register_8bit(Registers8bit::A, a_value);
     cpu.set_flag(Flags::Z, a_value == 0);
     cpu.set_flag(Flags::H, false);
 }
@@ -276,7 +285,7 @@ pub fn rlca(cpu: &mut CPU) {
 
 pub fn rla(cpu: &mut CPU) {
     let value = cpu.get_register_8bit(Registers8bit::A);
-    let (tmp, carry) = value.overflowing_shl(1); 
+    let tmp = value.wrapping_shl(1); 
     let result = tmp | (cpu.get_flag(Flags::C) as u8);
 
     cpu.set_register_8bit(Registers8bit::A, result);
@@ -284,7 +293,7 @@ pub fn rla(cpu: &mut CPU) {
     cpu.set_flag(Flags::Z, false);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, carry);
+    cpu.set_flag(Flags::C, value & 0x80 != 0);
 }
 
 pub fn rrca(cpu: &mut CPU) {
@@ -319,7 +328,7 @@ pub fn rlc(cpu: &mut CPU, operand1: Operand8bit) {
     
     operand1.set(cpu, result);
 
-    cpu.set_flag(Flags::Z, false);
+    cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
     cpu.set_flag(Flags::C, (result & 1) != 0);
@@ -327,15 +336,16 @@ pub fn rlc(cpu: &mut CPU, operand1: Operand8bit) {
 
 pub fn rl(cpu: &mut CPU, operand1: Operand8bit) {
     let value = operand1.get(cpu);
-    let (tmp, carry) = value.overflowing_shl(1); 
+
+    let tmp = value.wrapping_shl(1); 
     let result = tmp | (cpu.get_flag(Flags::C) as u8);
 
     operand1.set(cpu, result);
 
-    cpu.set_flag(Flags::Z, false);
+    cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, carry);
+    cpu.set_flag(Flags::C, value & 0x80 != 0);
 }
 
 pub fn rrc(cpu: &mut CPU, operand1: Operand8bit) {
@@ -366,14 +376,14 @@ pub fn rr(cpu: &mut CPU, operand1: Operand8bit) {
 
 pub fn sla(cpu: &mut CPU, operand1: Operand8bit) {
     let value = operand1.get(cpu);
-    let (result, carry) = value.overflowing_shl(1); 
+    let result = value.wrapping_shl(1); 
 
     operand1.set(cpu, result);
 
     cpu.set_flag(Flags::Z, result == 0);
     cpu.set_flag(Flags::N, false);
     cpu.set_flag(Flags::H, false);
-    cpu.set_flag(Flags::C, carry);
+    cpu.set_flag(Flags::C, value & 0x80 != 0);
 }
 
 pub fn sra(cpu: &mut CPU, operand1: Operand8bit) {
