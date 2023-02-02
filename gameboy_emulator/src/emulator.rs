@@ -30,9 +30,14 @@ impl Emulator {
     }
 
     pub fn init(&mut self, rom_path: &Path) {
-        let rom_bytes = fs::read(rom_path).expect("ERROR, IT IS NOT POSSIBLE TO READ THE ROM"); 
+        let rom_bytes = fs::read(rom_path)
+            .expect("ERROR, IT IS NOT POSSIBLE TO READ THE ROM"); 
         self.init_gameboy_doctor();
         self.cpu.load_rom(&rom_bytes);
+        
+        // let rom_bytes = fs::read("ROMS/bootstrap.gb")
+        //     .expect("ERROR, IT IS NOT POSSIBLE TO READ THE ROM"); 
+        // self.cpu.load_rom(&rom_bytes);
     }
 
     fn get_current_log(&self) -> String {
@@ -62,18 +67,33 @@ impl Emulator {
     }
 
     pub fn start_game_boy_doctor(&mut self) {
-
+        let mut serial_output = String::new();
         let mut log_file = File::create("logs.txt")
             .expect("ERROR OPENING FILE");
         let mut log_string = String::new();
 
-        for _ in 0..417100 {
-            log_string.push_str(&self.get_current_log());
-            self.cpu.execute_instruction();
+        // const MAX_RUNS: usize = 169600;
+        loop {
+            serial_output.clear();
+
+            const MAX_RUNS: usize = 1000;
+            for _ in 0..MAX_RUNS {
+                log_string.push_str(&self.get_current_log());
+                self.cpu.execute_instruction();
+
+                // blarggs test - serial output
+                if self.cpu.memory[0xFF02] == 0x81 {
+                    let c = self.cpu.memory[0xFF01] as char;
+                    serial_output.push(c);
+                    self.cpu.memory[0xFF02] = 0;
+                }
+            }
+            print!("{}", serial_output);
+            
+            log_file.write_all(log_string.as_bytes())
+                .expect("Error writing to file");
+            log_string.clear();
         }
-        
-        log_file.write_all(log_string.as_bytes())
-            .expect("Error writing to file");
     }
 
     pub fn start(&mut self) {
