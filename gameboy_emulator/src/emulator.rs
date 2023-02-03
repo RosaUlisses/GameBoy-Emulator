@@ -38,7 +38,7 @@ impl Emulator {
 
     pub fn init(&mut self, rom_path: &Path) {
         let rom_bytes = fs::read(rom_path)
-            .expect("ERROR, IT IS NOT POSSIBLE TO READ THE ROM"); 
+            .expect("ERROR READING ROM"); 
         self.init_gameboy_doctor();
         self.cpu.load_rom(&rom_bytes);
         
