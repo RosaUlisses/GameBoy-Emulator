@@ -6,16 +6,17 @@ pub mod bitwise;
 pub mod instructions;
 pub mod table;
 
+
 use std::io;
 use std::path::Path;
 use std::fs;
+use std::process::Command;
 
-const PATH: &str = "tests/cpu_instrs/individual/10-bit ops.gb";
+const roms_folder_path: &str = "blarggs_test_roms/cpu_instrs/individual";
+const log_folder_path: &str = "gbdoctor/truth/unzipped/cpu_instrs";
 
 fn main() {
-    let rom_path = String::from(PATH);
-    let mut emulator = Emulator::new();
-    emulator.init(Path::new(&rom_path));
-    emulator.init_gameboy_doctor();
+    let mut emulator = Emulator::new_emulator_for_tests();
+    emulator.init(Path::new(String::from(format!("{}/03-op sp,hl.gb", roms_folder_path)).as_str()));
     emulator.start_game_boy_doctor();
 }

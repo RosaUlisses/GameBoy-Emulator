@@ -1,5 +1,6 @@
 use crate::cpu::CPU;
 use crate::cpu::Registers8bit;
+use std::f32::consts::E;
 use std::io;
 use std::fs;
 use std::fs::File;
@@ -13,6 +14,12 @@ pub struct Emulator {
 impl Emulator {
     pub fn new() -> Self {
         return Emulator {cpu: CPU::new()};
+    }
+
+    pub fn new_emulator_for_tests() -> Self {
+        let mut emulator = Emulator::new();
+        emulator.init_gameboy_doctor();
+        return emulator;
     }
 
     pub fn init_gameboy_doctor(&mut self) {
@@ -72,10 +79,10 @@ impl Emulator {
             .expect("ERROR OPENING FILE");
         let mut log_string = String::new();
 
-        // const MAX_RUNS: usize = 169600;
         loop {
-            serial_output.clear();
-
+            if serial_output.contains("Passed") || serial_output.contains("Failed"){
+                return;
+            }
             const MAX_RUNS: usize = 1000;
             for _ in 0..MAX_RUNS {
                 log_string.push_str(&self.get_current_log());
@@ -88,59 +95,11 @@ impl Emulator {
                     self.cpu.memory[0xFF02] = 0;
                 }
             }
-            print!("{}", serial_output);
-            
+
             log_file.write_all(log_string.as_bytes())
                 .expect("Error writing to file");
             log_string.clear();
         }
     }
 
-    pub fn start(&mut self) {
-        let mut buf = String::new();
-        let mut serial_output = String::new();
-        const REG_NAMES: [&str; 8] = [   
-            "A", "F", "B", "C", "D", "E", "H", "L",
-        ];
-        
-        self.cpu.set_pc(0x100);    
-
-        let mut until: i32 = -1;
-        loop {
-            for _ in 0..0x1000 {
-                self.cpu.execute_instruction();
-                // blarggs test - serial output
-                if self.cpu.memory[0xFF02] == 0x81 {
-                    let c = self.cpu.memory[0xFF01] as char;
-                    serial_output.push(c);
-                    self.cpu.memory[0xFF02] = 0;
-                }
-            }
-            
-            println!("Program Counter: 0x{:04X}", self.cpu.program_counter);
-            println!("Stack Counter: 0x{:04X}", self.cpu.stack_pointer);
-            print!("Registers: ");
-            for i in 0..8 {
-                print!("{}: 0x{:02X}, ", REG_NAMES[i], self.cpu.registers[i]);
-            }
-            println!();
-            println!("MSG: {}", serial_output);
-            
-            if until < 0 || self.cpu.get_pc() == until as u16 {
-                until = -1;
-                io::stdin()
-                    .read_line(&mut buf)
-                    .expect("Reading line failed");
-                if buf.starts_with("exit") {
-                    break;
-                }
-                else if buf.starts_with("until") {
-                    let num = i32::from_str_radix(&buf[5..].trim(), 16)
-                        .expect("Error parsing int");
-                    until = num;
-                }
-            }
-            buf.clear();
-        }
-    }
 }
