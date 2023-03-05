@@ -11,7 +11,7 @@ Cargo.lock
 
 # Custom files
 /gameboy_emulator/tests/
-/gameboy_emulator/logs.txt
+/gameboy_emulator/log*.txt
 
 # The repo has already reached the maximum size. Besides that I decided to ignore those large files.
 /gameboy_emulator/blarggs_test_roms
