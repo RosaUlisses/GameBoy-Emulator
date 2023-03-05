@@ -1,7 +1,5 @@
 use crate::cpu::CPU;
 use crate::cpu::Registers8bit;
-use std::f32::consts::E;
-use std::io;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -73,15 +71,16 @@ impl Emulator {
         return log;
     }
 
-    pub fn start_game_boy_doctor(&mut self) {
+    pub fn start_game_boy_doctor(&mut self, log_file: &str) {
         let mut serial_output = String::new();
-        let mut log_file = File::create("logs.txt")
+        let mut log_file = File::create(log_file)
             .expect("ERROR OPENING FILE");
         let mut log_string = String::new();
 
         loop {
-            if serial_output.contains("Passed") || serial_output.contains("Failed"){
-                return;
+            if serial_output.contains("Passed")
+            || serial_output.contains("Failed") {
+                break;
             }
             const MAX_RUNS: usize = 1000;
             for _ in 0..MAX_RUNS {
@@ -100,6 +99,8 @@ impl Emulator {
                 .expect("Error writing to file");
             log_string.clear();
         }
+
+        println!("SERIAL OUTPUT: {}", serial_output);
     }
 
 }
