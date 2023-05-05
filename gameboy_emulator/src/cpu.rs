@@ -1,9 +1,12 @@
+use std::sync::Mutex;
 use crate::bitwise;
 use crate::table::INSTRUCTIONS;
 use std::vec::Vec;
 
 const REGISTER_COUNT: usize = 8;
-const MEMORY_SIZE: usize = 65536; 
+const MEMORY_SIZE: usize = 65536;
+const IE_REGISTER_ADDRESS: usize = 0xFFFF;
+const IRQ_REGISTER_ADDRESS : usize = 0xFF0F;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Flags {
@@ -33,12 +36,22 @@ pub enum Registers16bit {
     HL = 3,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Interrupts {
+    VBLank,
+    LCDStatus,
+    Timer,
+    Serial,
+    Joypad
+}
+
+
 pub struct CPU {
     pub registers: [u8; REGISTER_COUNT],
     pub stack_pointer: u16,
     pub program_counter: u16,
     pub memory: [u8; MEMORY_SIZE],
-    pub ime_flag: bool,
+    pub ime_flag: bool
 }
 
 impl CPU {
@@ -61,6 +74,18 @@ impl CPU {
     pub fn execute_instruction(&mut self) {
         let opcode = self.fetch_next_8bits_pc();
         INSTRUCTIONS[opcode as usize].execute(self);
+    }
+    
+    pub  fn handle_interrupts(&mut self) {
+        if self.interrupts_enabled() {
+            match  self.enabled_interrupt() {
+                Interrupts::VBLank => self.handle_vblank_interrupt(),
+                Interrupts::LCDStatus => self.handle_lcdstatus_interrupt(),
+                Interrupts::Timer => self.handle_timer_interrupt(),
+                Interrupts::Serial => self.handle_serial_interrupt(),
+                Interrupts::Joypad => self.handle_joypad_interrupt(),
+            } 
+        }
     }
 
     pub fn get_memory_8bit(&self, address: u16) -> u8 {
@@ -231,5 +256,54 @@ impl CPU {
         self.ime_flag = false;
     }
 
+    fn interrupts_enabled(& self) -> bool {
+       return self.memory[IE_REGISTER_ADDRESS] & (0xF) != 0;
+    }
+    
+    fn enabled_interrupt(& self) -> Interrupts {
+        if (self.memory[IE_REGISTER_ADDRESS] & 1) != 0 {
+            return Interrupts::VBLank;
+        }
+        
+        if (self.memory[IE_REGISTER_ADDRESS] & 2) != 0 {
+            return Interrupts::LCDStatus;
+        }
+        
+        if (self.memory[IE_REGISTER_ADDRESS] & 4) != 0 {
+            return Interrupts::Timer;
+        }
+        
+        if (self.memory[IE_REGISTER_ADDRESS] & 8) != 0 {
+            return Interrupts::Serial;
+        }
+
+        return Interrupts::Joypad;
+    }
+    
+    fn handle_vblank_interrupt(&mut self) {
+        // TODO -> implement vblank interrupt
+        println!("VBLANK INTERRUPT");
+    }
+
+    fn handle_lcdstatus_interrupt(&mut self) {
+        // TODO -> implement lcd status interrupt
+        println!("LCD STATUS INTERRUPT");
+    }
+
+    fn handle_timer_interrupt(&mut self) {
+        // TODO -> implement timer interrupt
+        println!("TIMER INTERRUPT");
+    }
+
+    fn handle_serial_interrupt(&mut self) {
+        // TODO -> implement serial interrupt
+        println!("SERIAL INTERRUPT");
+    }
+
+    fn handle_joypad_interrupt(&mut self) {
+        // TODO -> implement joypad interrupt
+        println!("JOYPAD INTERRUPT");
+    }
+    
 }
 
