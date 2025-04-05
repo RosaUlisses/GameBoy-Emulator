@@ -13,11 +13,9 @@ use std::path::Path;
 
 
 fn main() {
-    let mut emulator = Emulator::new();
-    
-    emulator.init_rom(Path::new(String::from(
-        format!("C:/Programming/GameBoy-Emulator/gameboy_emulator/tests/blargg-test-roms/cpu_instrs/individual/03-op sp,hl.gb")
-    ).as_str()));
+    let mut emulator = Emulator::default();
+
+    emulator.init_rom(Path::new("./tests/blargg-test-roms/cpu_instrs/individual/03-op sp,hl.gb"));
     
     print!("Oi");
 }

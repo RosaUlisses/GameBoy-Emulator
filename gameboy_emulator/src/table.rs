@@ -2,8 +2,8 @@ use crate::dispatch::Instruction;
 use crate::dispatch::Instruction::*;
 use crate::dispatch::AddressingMode8bit as Mode8;
 use crate::dispatch::AddressingMode16bit as Mode16;
-use crate::cpu::Registers8bit as Reg8;
-use crate::cpu::Registers16bit as Reg16;
+use crate::cpu::Register8bit as Reg8;
+use crate::cpu::Register16bit as Reg16;
 
 use crate::instructions::*;
 
@@ -328,6 +328,7 @@ pub const INSTRUCTIONS: [Instruction; 512] = [
     Op8bit      (    srl,      Mode8::Register(Reg8::L)),
     Op8bit      (    srl,    Mode8::Indirect(Reg16::HL)),
     Op8bit      (    srl,      Mode8::Register(Reg8::A)),
+
     Op8bit8bit  (    bit,               Mode8::Fixed(0),      Mode8::Register(Reg8::B)),
     Op8bit8bit  (    bit,               Mode8::Fixed(0),      Mode8::Register(Reg8::C)),
     Op8bit8bit  (    bit,               Mode8::Fixed(0),      Mode8::Register(Reg8::D)),

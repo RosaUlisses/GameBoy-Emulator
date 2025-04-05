@@ -1,43 +1,37 @@
+use crate::cpu::Register16bit;
+use crate::cpu::Register8bit;
 use crate::cpu::CPU;
-use crate::cpu::Registers16bit;
-use crate::cpu::Registers8bit;
 
 use crate::table::INSTRUCTIONS;
 
 #[derive(Clone, Copy)]
 pub enum Operand8bit {
-    Register(Registers8bit),
+    Register(Register8bit),
     Immediate(u8),
-    Address(u16)
+    Address(u16),
 }
 
 impl Operand8bit {
     pub fn get(self, cpu: &CPU) -> u8 {
         match self {
-            Operand8bit::Register(register)
-                => return cpu.get_register_8bit(register),
-            Operand8bit::Immediate(immediate)
-                => return immediate,
-            Operand8bit::Address(address)
-                => return cpu.get_memory_8bit(address),
+            Operand8bit::Register(register)   => cpu.get_register_8bit(register),
+            Operand8bit::Immediate(immediate) => immediate,
+            Operand8bit::Address(address)     => cpu.get_memory_8bit(address),
         }
     }
 
     pub fn set(self, cpu: &mut CPU, value: u8) {
         match self {
-            Operand8bit::Register(register)
-                => cpu.set_register_8bit(register, value),
-            Operand8bit::Immediate(_)
-                => panic!("operand.set() on an immediate value"),
-            Operand8bit::Address(address)
-                => cpu.set_memory_8bit(address, value),
+            Operand8bit::Register(register) => cpu.set_register_8bit(register, value),
+            Operand8bit::Immediate(_)       => panic!("operand.set() on an immediate value"),
+            Operand8bit::Address(address)   => cpu.set_memory_8bit(address, value),
         }
     }
 }
 
 #[derive(Clone, Copy)]
 pub enum Operand16bit {
-    Register(Registers16bit),
+    Register(Register16bit),
     Immediate(u16),
     Address(u16),
     StackPointer,
@@ -46,34 +40,26 @@ pub enum Operand16bit {
 impl Operand16bit {
     pub fn get(self, cpu: &mut CPU) -> u16 {
         match self {
-            Operand16bit::Register(register)
-                => cpu.get_register_16bit(register),
-            Operand16bit::Immediate(immediate)
-                => immediate,
-            Operand16bit::Address(address)
-                => cpu.get_memory_16bit(address),
-            Operand16bit::StackPointer
-                => cpu.get_sp()
-            }
+            Operand16bit::Register(register)   => cpu.get_register_16bit(register),
+            Operand16bit::Immediate(immediate) => immediate,
+            Operand16bit::Address(address)     => cpu.get_memory_16bit(address),
+            Operand16bit::StackPointer         => cpu.get_sp(),
         }
+    }
     pub fn set(self, cpu: &mut CPU, value: u16) {
         match self {
-            Operand16bit::Register(register)
-            => cpu.set_register_16bit(register, value),
-            Operand16bit::Immediate(_)
-            => panic!("operand.set() on an immediate value"),
-            Operand16bit::Address(address)
-            => cpu.set_memory_16bit(address, value),
-            Operand16bit::StackPointer
-                => cpu.set_sp(value),
+            Operand16bit::Register(register) => cpu.set_register_16bit(register, value),
+            Operand16bit::Immediate(_)       => panic!("operand.set() on an immediate value"),
+            Operand16bit::Address(address)   => cpu.set_memory_16bit(address, value),
+            Operand16bit::StackPointer       => cpu.set_sp(value),
         }
     }
 }
 
 #[derive(Clone, Copy)]
 pub enum AddressingMode8bit {
-    Register(Registers8bit),
-    Indirect(Registers16bit),
+    Register(Register8bit),
+    Indirect(Register16bit),
     IndexedC,
     IndexedImm,
     Immediate,
@@ -83,8 +69,8 @@ pub enum AddressingMode8bit {
 
 #[derive(Clone, Copy)]
 pub enum AddressingMode16bit {
-    Register(Registers16bit),
-    Indirect(Registers16bit),
+    Register(Register16bit),
+    Indirect(Register16bit),
     Immediate,
     Address,
     StackPointer,
@@ -99,17 +85,13 @@ impl AddressingMode8bit {
             AddressingMode8bit::Indirect(register)
                 => Operand8bit::Address(cpu.get_register_16bit(register)),
             AddressingMode8bit::IndexedC
-                => Operand8bit::Address(
-                    cpu.get_register_8bit(Registers8bit::C) as u16 | 0xFF00
-                ),
+                => Operand8bit::Address(cpu.get_register_8bit(Register8bit::C) as u16 | 0xFF00),
             AddressingMode8bit::IndexedImm
-                => Operand8bit::Address(
-                    cpu.fetch_next_8bits_pc() as u16 | 0xFF00
-                ),
+                => Operand8bit::Address(cpu.fetch_next_8bits_pc() as u16 | 0xFF00),
             AddressingMode8bit::Immediate
                 => Operand8bit::Immediate(cpu.fetch_next_8bits_pc()),
             AddressingMode8bit::Address
-                => Operand8bit::Address(cpu.fetch_next_16bits_pc()),    
+                => Operand8bit::Address(cpu.fetch_next_16bits_pc()),
             AddressingMode8bit::Fixed(value)
                 => Operand8bit::Immediate(value),
         }
@@ -119,26 +101,20 @@ impl AddressingMode8bit {
 impl AddressingMode16bit {
     pub fn fetch_operand(self, cpu: &mut CPU) -> Operand16bit {
         match self {
-            AddressingMode16bit::Register(register)
-                => Operand16bit::Register(register),
-            AddressingMode16bit::Indirect(register)
-                => Operand16bit::Address(cpu.get_register_16bit(register)),
-            AddressingMode16bit::Immediate
-                => Operand16bit::Immediate(cpu.fetch_next_16bits_pc()),
-            AddressingMode16bit::Address
-                => Operand16bit::Address(cpu.fetch_next_16bits_pc()),
-            AddressingMode16bit::StackPointer
-                => Operand16bit::StackPointer,
-            AddressingMode16bit::Fixed(value)
-                => Operand16bit::Immediate(value),
+            AddressingMode16bit::Register(register) => Operand16bit::Register(register),
+            AddressingMode16bit::Indirect(register) => Operand16bit::Address(cpu.get_register_16bit(register)),
+            AddressingMode16bit::Immediate          => Operand16bit::Immediate(cpu.fetch_next_16bits_pc()),
+            AddressingMode16bit::Address            => Operand16bit::Address(cpu.fetch_next_16bits_pc()),
+            AddressingMode16bit::StackPointer       => Operand16bit::StackPointer,
+            AddressingMode16bit::Fixed(value)       => Operand16bit::Immediate(value),
         }
     }
 }
 
-type FnImplied = fn(&mut CPU);
-type FnOp8bit = fn(&mut CPU, Operand8bit);
-type FnOp8bit8bit = fn(&mut CPU, Operand8bit, Operand8bit);
-type FnOp16bit = fn(&mut CPU, Operand16bit);
+type FnImplied      = fn(&mut CPU);
+type FnOp8bit       = fn(&mut CPU, Operand8bit);
+type FnOp8bit8bit   = fn(&mut CPU, Operand8bit, Operand8bit);
+type FnOp16bit      = fn(&mut CPU, Operand16bit);
 type FnOp16bit16bit = fn(&mut CPU, Operand16bit, Operand16bit);
 
 #[derive(Clone, Copy)]
@@ -186,4 +162,3 @@ impl Instruction {
         }
     }
 }
-
